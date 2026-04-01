@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.PlaylistDetailViewModel
 import com.example.subnavi.data.remote.SongDto
 
@@ -44,7 +45,8 @@ import com.example.subnavi.data.remote.SongDto
 @Composable
 fun PlaylistDetailScreen(
     navController: NavHostController,
-    viewModel: PlaylistDetailViewModel = hiltViewModel()
+    viewModel: PlaylistDetailViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -89,13 +91,13 @@ fun PlaylistDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
-                            onClick = { /* Phase 8: play all */ },
+                            onClick = { playerViewModel.play(playlist!!.entry, 0) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Play")
                         }
                         OutlinedButton(
-                            onClick = { /* Phase 8: shuffle */ },
+                            onClick = { playerViewModel.play(playlist!!.entry.shuffled(), 0) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Shuffle")
@@ -103,7 +105,11 @@ fun PlaylistDetailScreen(
                     }
                 }
                 itemsIndexed(playlist!!.entry) { index, song ->
-                    PlaylistSongRow(song = song, index = index + 1, onClick = { /* Phase 8 */ })
+                    PlaylistSongRow(
+                        song = song,
+                        index = index + 1,
+                        onClick = { playerViewModel.play(playlist.entry, index) }
+                    )
                 }
             }
         }

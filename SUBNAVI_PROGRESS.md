@@ -1,7 +1,7 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 7 — Playlists CRUD**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 8 — Local playback service**: BUILD GREEN, MISSING MANUAL TEST
 
 ### Bug fixes
 - **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
@@ -17,6 +17,7 @@
 | 5 — Songs screen | DONE WITH MISSING MANUAL TEST | 1) Verificare lista canzoni caricata **con artwork visibile** 2) Digitare query nella search bar → verificare filtraggio 3) Cancellare ricerca → verificare ritorno tutte le canzoni 4) Screenshots: `phase_05_songs_list.png`, `phase_05_songs_search.png` |
 | 6 — Album detail | DONE WITH MISSING MANUAL TEST | 1) Tappare album da Albums screen o Home → verificare apertura detail 2) Verificare artwork, titolo, artista, anno visibili 3) Verificare lista canzoni con numero traccia e durata 4) Verificare bottoni Play/Shuffle presenti (placeholder) 5) Tappare freccia back → verificare ritorno alla schermata precedente 6) Screenshot: `phase_06_album_detail.png` |
 | 7 — Playlists CRUD | DONE WITH MISSING MANUAL TEST | 1) Tappare tab Playlists → verificare griglia caricata 2) Tappare + → inserire nome → verificare playlist creata 3) Tappare playlist → verificare detail con lista canzoni 4) Tappare cestino → verificare playlist eliminata 5) Screenshots: `phase_07_playlists_grid.png`, `phase_07_playlist_detail.png`, `phase_07_create.png` |
+| 8 — Playback | DONE WITH MISSING MANUAL TEST | 1) Tappare canzone da Songs → verificare riproduzione audio 2) Verificare notifica con titolo traccia 3) Tappare Play in Album Detail → verificare riproduzione 4) Tappare Shuffle → verificare ordine casuale 5) Tappare canzone in Playlist Detail → verificare riproduzione 6) Screenshot: `phase_08_notification.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -48,10 +49,10 @@
 - Cover art URLs need server base URL prepended (currently passing raw coverArt ID)
 
 ## Next planned step
-- **Phase 8 — Local playback service**
-  - Media3 ExoPlayer integration
-  - Background MediaLibraryService
-  - Queue management + notification
+- **Phase 9 — Persistent Mini-Player**
+  - Mini-player bar above bottom navigation
+  - Current track thumbnail, title, artist
+  - Play/pause, skip next controls
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)

@@ -60,6 +60,12 @@ interface SubsonicApi {
         @Query("comment") comment: String? = null,
         @Query("public") public: Boolean? = null
     ): SubsonicResponse
+
+    @GET("rest/scrobble")
+    suspend fun scrobble(
+        @Query("id") id: String,
+        @Query("submission") submission: Boolean = true
+    ): SubsonicResponse
 }
 
 data class SubsonicResponse(

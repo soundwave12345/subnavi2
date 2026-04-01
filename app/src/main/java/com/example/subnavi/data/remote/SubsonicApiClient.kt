@@ -75,6 +75,14 @@ class SubsonicApiClient @Inject constructor() {
                 "&size=$size"
     }
 
+    fun getStreamUrl(songId: String): String {
+        return "${currentBaseUrl}rest/stream?id=$songId" +
+                "&u=$currentUsername" +
+                "&t=$currentToken" +
+                "&s=$currentSalt" +
+                "&v=1.16.1&c=Subnavi"
+    }
+
     private fun normalizeUrl(url: String): String {
         var base = url.trimEnd('/')
         return "$base/"

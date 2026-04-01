@@ -1,5 +1,6 @@
 package com.example.subnavi.ui.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,13 +39,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.example.subnavi.AlbumDetailViewModel
+import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.data.remote.SongDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
     navController: NavHostController,
-    viewModel: AlbumDetailViewModel = hiltViewModel()
+    viewModel: AlbumDetailViewModel = hiltViewModel(),
+    playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -91,13 +92,13 @@ fun AlbumDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
-                            onClick = { /* Phase 8: play all */ },
+                            onClick = { playerViewModel.play(album!!.song, 0) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Play")
                         }
                         OutlinedButton(
-                            onClick = { /* Phase 8: shuffle */ },
+                            onClick = { playerViewModel.play(album!!.song.shuffled(), 0) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Shuffle")
@@ -105,7 +106,11 @@ fun AlbumDetailScreen(
                     }
                 }
                 itemsIndexed(album!!.song) { index, song ->
-                    SongRow(song = song, index = index + 1, onClick = { /* Phase 8 */ })
+                    SongRow(
+                        song = song,
+                        index = index + 1,
+                        onClick = { playerViewModel.play(album.song, index) }
+                    )
                 }
             }
         }
