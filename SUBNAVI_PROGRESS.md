@@ -1,7 +1,7 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 1 — Networking + Subsonic authentication**: DONE
+- **Phase 2 — Navigation shell**: DONE
 - Build: GREEN
 - Emulator acceptance tests: NOT RUN (no emulator)
 
@@ -10,6 +10,7 @@
 |---|---|
 | 0 — Bootstrap | DONE |
 | 1 — Networking + Auth | DONE |
+| 2 — Navigation shell | DONE |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -43,11 +44,12 @@
 - JAVA_HOME must be set to `~/.sdkman/candidates/java/current`
 
 ## Next planned step
-- **Phase 2 — Navigation shell**
-  - NavHost with bottom navigation (Home, Playlists, Albums, Songs)
-  - Full-screen player route (no bottom bar)
-  - Settings entry point
-  - Screen shells only, no business logic
+- **Phase 3 — Home data vertical slice**
+  - Recently Played (`getAlbumList2?type=recent`)
+  - Recently Added (`getAlbumList2?type=newest`)
+  - Playlists (`getPlaylists`)
+  - Loading / empty / error states
+  - Tap handlers wired
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)
