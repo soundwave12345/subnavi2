@@ -3,7 +3,6 @@ package com.example.subnavi.data.repository
 import com.example.subnavi.data.local.ServerConfig
 import com.example.subnavi.data.local.ServerConfigStore
 import com.example.subnavi.data.remote.SubsonicApiClient
-import com.example.subnavi.data.remote.SubsonicAuth
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,9 +16,8 @@ class AuthRepository @Inject constructor(
     suspend fun testConnection(config: ServerConfig): Result<String> {
         return try {
             val api = apiClient.connect(config)
-            val (token, salt) = SubsonicAuth.generateToken(config.password)
-            val response = api.ping(config.username, token, salt)
-            val inner = response.response
+            val response = api.ping(config.username, "", "")
+            val inner = response.subsonicResponse
             if (inner.status == "ok") {
                 Result.success("Connection successful (server v${inner.version})")
             } else {

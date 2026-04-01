@@ -6,8 +6,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.subnavi.OnboardingScreen
+import com.example.subnavi.ui.screen.AlbumDetailShell
 import com.example.subnavi.ui.screen.AlbumsScreen
 import com.example.subnavi.ui.screen.HomeScreen
+import com.example.subnavi.ui.screen.PlaylistDetailShell
 import com.example.subnavi.ui.screen.PlayerScreen
 import com.example.subnavi.ui.screen.PlaylistsScreen
 import com.example.subnavi.ui.screen.SettingsScreen
@@ -41,5 +43,11 @@ fun SubnaviNavHost(
         composable(Screen.Playlists.route) { PlaylistsScreen(navController) }
         composable(Screen.Player.route) { PlayerScreen(navController) }
         composable(Screen.Settings.route) { SettingsScreen(navController) }
+        composable(Screen.AlbumDetail.route) {
+            AlbumDetailShell(navController)
+        }
+        composable(Screen.PlaylistDetail.route) {
+            PlaylistDetailShell(navController)
+        }
     }
 }

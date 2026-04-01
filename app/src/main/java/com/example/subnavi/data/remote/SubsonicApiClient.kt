@@ -1,6 +1,8 @@
 package com.example.subnavi.data.remote
 
 import com.example.subnavi.data.local.ServerConfig
+import okhttp3.HttpUrl
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -13,17 +15,35 @@ import javax.inject.Singleton
 class SubsonicApiClient @Inject constructor() {
 
     private var currentBaseUrl: String = ""
+    private var currentSalt: String = ""
     private var _api: SubsonicApi? = null
 
     val api: SubsonicApi
         get() = _api ?: throw IllegalStateException("Call connect() first")
 
-    suspend fun connect(config: ServerConfig): SubsonicApi {
+    fun connect(config: ServerConfig): SubsonicApi {
         val baseUrl = normalizeUrl(config.url)
+        val (token, salt) = SubsonicAuth.generateToken(config.password)
+        currentSalt = salt
+
         if (_api == null || baseUrl != currentBaseUrl) {
+            val authInterceptor = Interceptor { chain ->
+                val original = chain.request()
+                val newUrl = original.url.newBuilder()
+                    .addQueryParameter("u", config.username)
+                    .addQueryParameter("t", token)
+                    .addQueryParameter("s", salt)
+                    .addQueryParameter("v", "1.16.1")
+                    .addQueryParameter("c", "Subnavi")
+                    .addQueryParameter("f", "json")
+                    .build()
+                chain.proceed(original.newBuilder().url(newUrl).build())
+            }
+
             val client = OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)
+                .addInterceptor(authInterceptor)
                 .addInterceptor(HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BASIC
                 })
@@ -43,7 +63,6 @@ class SubsonicApiClient @Inject constructor() {
 
     private fun normalizeUrl(url: String): String {
         var base = url.trimEnd('/')
-        if (!base.endsWith("/")) base += "/"
-        return base
+        return "$base/"
     }
 }
