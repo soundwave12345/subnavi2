@@ -9,7 +9,7 @@ import com.example.subnavi.OnboardingScreen
 import com.example.subnavi.ui.screen.AlbumDetailScreen
 import com.example.subnavi.ui.screen.AlbumsScreen
 import com.example.subnavi.ui.screen.HomeScreen
-import com.example.subnavi.ui.screen.PlaylistDetailShell
+import com.example.subnavi.ui.screen.PlaylistDetailScreen
 import com.example.subnavi.ui.screen.PlayerScreen
 import com.example.subnavi.ui.screen.PlaylistsScreen
 import com.example.subnavi.ui.screen.SettingsScreen
@@ -47,7 +47,7 @@ fun SubnaviNavHost(
             AlbumDetailScreen(navController)
         }
         composable(Screen.PlaylistDetail.route) {
-            PlaylistDetailShell(navController)
+            PlaylistDetailScreen(navController)
         }
     }
 }

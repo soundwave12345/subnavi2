@@ -3,6 +3,7 @@ package com.example.subnavi.data.remote
 import com.google.gson.annotations.SerializedName
 import retrofit2.http.GET
 import retrofit2.http.Query
+import retrofit2.http.POST
 
 interface SubsonicApi {
 
@@ -36,6 +37,29 @@ interface SubsonicApi {
     suspend fun getAlbum(
         @Query("id") id: String
     ): SubsonicResponse
+
+    @GET("rest/getPlaylist")
+    suspend fun getPlaylist(
+        @Query("id") id: String
+    ): SubsonicResponse
+
+    @GET("rest/createPlaylist")
+    suspend fun createPlaylist(
+        @Query("name") name: String
+    ): SubsonicResponse
+
+    @GET("rest/deletePlaylist")
+    suspend fun deletePlaylist(
+        @Query("id") id: String
+    ): SubsonicResponse
+
+    @GET("rest/updatePlaylist")
+    suspend fun updatePlaylist(
+        @Query("playlistId") playlistId: String,
+        @Query("name") name: String? = null,
+        @Query("comment") comment: String? = null,
+        @Query("public") public: Boolean? = null
+    ): SubsonicResponse
 }
 
 data class SubsonicResponse(
@@ -50,7 +74,8 @@ data class SubsonicInner(
     val playlists: PlaylistsWrapper? = null,
     @SerializedName("searchResult3") val searchResult3: SearchResult3? = null,
     @SerializedName("randomSongs") val randomSongs: RandomSongs? = null,
-    val album: AlbumDetailDto? = null
+    val album: AlbumDetailDto? = null,
+    val playlist: PlaylistDetailDto? = null
 )
 
 data class SearchResult3(
@@ -103,6 +128,18 @@ data class PlaylistDto(
     val owner: String? = null,
     val public: Boolean? = null,
     val coverArt: String? = null
+)
+
+data class PlaylistDetailDto(
+    val id: String,
+    val name: String,
+    val songCount: Int = 0,
+    val duration: Long = 0,
+    val comment: String? = null,
+    val owner: String? = null,
+    val public: Boolean? = null,
+    val coverArt: String? = null,
+    val entry: List<SongDto> = emptyList()
 )
 
 data class SongDto(

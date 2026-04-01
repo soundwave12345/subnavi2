@@ -3,6 +3,7 @@ package com.example.subnavi.data.repository
 import com.example.subnavi.data.local.ServerConfigStore
 import com.example.subnavi.data.remote.AlbumDetailDto
 import com.example.subnavi.data.remote.AlbumDto
+import com.example.subnavi.data.remote.PlaylistDetailDto
 import com.example.subnavi.data.remote.PlaylistDto
 import com.example.subnavi.data.remote.SongDto
 import com.example.subnavi.data.remote.SubsonicApiClient
@@ -28,6 +29,11 @@ class MusicRepository @Inject constructor(
     private fun AlbumDetailDto.withCoverArtUrls() = copy(
         coverArt = apiClient.getCoverArtUrl(coverArt),
         song = song.map { it.withCoverArtUrl() }
+    )
+
+    private fun PlaylistDetailDto.withCoverArtUrls() = copy(
+        coverArt = apiClient.getCoverArtUrl(coverArt),
+        entry = entry.map { it.withCoverArtUrl() }
     )
 
     suspend fun getRecentAlbums(): Result<List<AlbumDto>> = try {
@@ -99,6 +105,47 @@ class MusicRepository @Inject constructor(
         val album = response.subsonicResponse.album
             ?: return Result.failure(IllegalStateException("Album not found"))
         Result.success(album.withCoverArtUrls())
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getPlaylistDetail(playlistId: String): Result<PlaylistDetailDto> = try {
+        val api = getApi()
+        val response = api.getPlaylist(id = playlistId)
+        val playlist = response.subsonicResponse.playlist
+            ?: return Result.failure(IllegalStateException("Playlist not found"))
+        Result.success(playlist.withCoverArtUrls())
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun createPlaylist(name: String): Result<PlaylistDto> = try {
+        val api = getApi()
+        val response = api.createPlaylist(name = name)
+        val playlist = response.subsonicResponse.playlists?.playlist?.firstOrNull()
+            ?: return Result.failure(IllegalStateException("Created playlist not found in response"))
+        Result.success(playlist)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun deletePlaylist(playlistId: String): Result<Unit> = try {
+        val api = getApi()
+        api.deletePlaylist(id = playlistId)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun updatePlaylist(
+        playlistId: String,
+        name: String? = null,
+        comment: String? = null,
+        public: Boolean? = null
+    ): Result<Unit> = try {
+        val api = getApi()
+        api.updatePlaylist(playlistId = playlistId, name = name, comment = comment, public = public)
+        Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
