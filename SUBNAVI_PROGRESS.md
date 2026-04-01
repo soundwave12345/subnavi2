@@ -1,7 +1,10 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 4 — Albums screen**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 5 — Songs screen**: BUILD GREEN, MISSING MANUAL TEST
+
+### Bug fixes
+- **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
 
 ### Phase history
 | Phase | Status | Manual tests pending |
@@ -9,8 +12,9 @@
 | 0 — Bootstrap | DONE WITH MISSING MANUAL TEST | 1) App lancia senza crash 2) Placeholder screen visibile 3) Screenshot: `phase_00_launch.png` |
 | 1 — Networking + Auth | DONE WITH MISSING MANUAL TEST | 1) Inserire URL `http://10.0.2.2:4533` + credenziali valide → verificare successo 2) Password sbagliata → verificare messaggio errore 3) Disabilitare rete → verificare errore di rete 4) Screenshots: `phase_01_onboarding.png`, `phase_01_auth_success.png`, `phase_01_auth_error_bad_creds.png`, `phase_01_auth_error_network.png` |
 | 2 — Navigation shell | DONE WITH MISSING MANUAL TEST | 1) Tappare ogni tab bottom nav (Home, Albums, Songs, Playlists) → verificare cambio schermata 2) Screenshots: `phase_02_nav_home.png`, `phase_02_nav_albums.png`, `phase_02_nav_songs.png`, `phase_02_nav_playlists.png` |
-| 3 — Home data | DONE WITH MISSING MANUAL TEST | 1) Scroll home → verificare sezioni "Recently Played", "Recently Added", "Playlists" caricano dati reali 2) Disabilitare rete → verificare stato errore (no crash) 3) Tappare album → verifica navigazione a detail 4) Screenshots: `phase_03_home_loaded.png`, `phase_03_home_error.png` |
-| 4 — Albums screen | DONE WITH MISSING MANUAL TEST | 1) Verificare griglia album caricata 2) Digitare query nella search bar → verificare filtraggio risultati 3) Cancellare ricerca → verificare ritorno tutti gli album 4) Tappare album → verificare navigazione detail 5) Screenshots: `phase_04_albums_grid.png`, `phase_04_albums_search.png` |
+| 3 — Home data | DONE WITH MISSING MANUAL TEST | 1) Scroll home → verificare sezioni "Recently Played", "Recently Added", "Playlists" caricano dati reali 2) Disabilitare rete → verificare stato errore (no crash) 3) Tappare album → verifica navigazione a detail 4) **Verificare artwork visibile** 5) Screenshots: `phase_03_home_loaded.png`, `phase_03_home_error.png` |
+| 4 — Albums screen | DONE WITH MISSING MANUAL TEST | 1) Verificare griglia album caricata **con artwork visibile** 2) Digitare query nella search bar → verificare filtraggio risultati 3) Cancellare ricerca → verificare ritorno tutti gli album 4) Tappare album → verificare navigazione detail 5) Screenshots: `phase_04_albums_grid.png`, `phase_04_albums_search.png` |
+| 5 — Songs screen | DONE WITH MISSING MANUAL TEST | 1) Verificare lista canzoni caricata **con artwork visibile** 2) Digitare query nella search bar → verificare filtraggio 3) Cancellare ricerca → verificare ritorno tutte le canzoni 4) Screenshots: `phase_05_songs_list.png`, `phase_05_songs_search.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |

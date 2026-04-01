@@ -15,6 +15,8 @@ import javax.inject.Singleton
 class SubsonicApiClient @Inject constructor() {
 
     private var currentBaseUrl: String = ""
+    private var currentUsername: String = ""
+    private var currentToken: String = ""
     private var currentSalt: String = ""
     private var _api: SubsonicApi? = null
 
@@ -24,6 +26,8 @@ class SubsonicApiClient @Inject constructor() {
     fun connect(config: ServerConfig): SubsonicApi {
         val baseUrl = normalizeUrl(config.url)
         val (token, salt) = SubsonicAuth.generateToken(config.password)
+        currentUsername = config.username
+        currentToken = token
         currentSalt = salt
 
         if (_api == null || baseUrl != currentBaseUrl) {
@@ -63,7 +67,12 @@ class SubsonicApiClient @Inject constructor() {
 
     fun getCoverArtUrl(coverArtId: String?, size: Int = 300): String? {
         if (coverArtId.isNullOrBlank() || currentBaseUrl.isBlank()) return null
-        return "${currentBaseUrl}rest/getCoverArt?id=$coverArtId&size=$size"
+        return "${currentBaseUrl}rest/getCoverArt?id=$coverArtId" +
+                "&u=$currentUsername" +
+                "&t=$currentToken" +
+                "&s=$currentSalt" +
+                "&v=1.16.1&c=Subnavi" +
+                "&size=$size"
     }
 
     private fun normalizeUrl(url: String): String {

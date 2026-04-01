@@ -8,18 +8,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.subnavi.data.local.ServerConfig
+import com.example.subnavi.data.repository.AuthRepository
 import com.example.subnavi.ui.navigation.Screen
 import com.example.subnavi.ui.navigation.SubnaviBottomBar
 import com.example.subnavi.ui.navigation.SubnaviNavHost
 import com.example.subnavi.ui.theme.SubnaviTheme
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -34,10 +43,30 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
+    private val _hasCredentials = MutableStateFlow(false)
+    val hasCredentials: StateFlow<Boolean> = _hasCredentials.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            authRepository.serverConfig.collect { config ->
+                _hasCredentials.value =
+                    config.url.isNotBlank() &&
+                    config.username.isNotEmpty() &&
+                    config.password.isNotEmpty()
+            }
+        }
+    }
+}
+
 @Composable
 fun SubnaviMain() {
+    val viewModel: MainViewModel = hiltViewModel()
+    val isConnected by viewModel.hasCredentials.collectAsState()
     val navController = rememberNavController()
-    var isConnected by rememberSaveable { mutableStateOf(false) }
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showBottomBar = currentRoute in listOf(
         Screen.Home.route,
