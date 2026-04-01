@@ -23,8 +23,13 @@ interface SubsonicApi {
     suspend fun search3(
         @Query("query") query: String,
         @Query("albumCount") albumCount: Int = 20,
-        @Query("songCount") songCount: Int = 0,
+        @Query("songCount") songCount: Int = 20,
         @Query("artistCount") artistCount: Int = 0
+    ): SubsonicResponse
+
+    @GET("rest/getRandomSongs")
+    suspend fun getRandomSongs(
+        @Query("size") size: Int = 50
     ): SubsonicResponse
 }
 
@@ -38,11 +43,17 @@ data class SubsonicInner(
     val error: SubsonicError? = null,
     @SerializedName("albumList2") val albumList2: AlbumList2? = null,
     val playlists: PlaylistsWrapper? = null,
-    @SerializedName("searchResult3") val searchResult3: SearchResult3? = null
+    @SerializedName("searchResult3") val searchResult3: SearchResult3? = null,
+    @SerializedName("randomSongs") val randomSongs: RandomSongs? = null
 )
 
 data class SearchResult3(
-    val album: List<AlbumDto> = emptyList()
+    val album: List<AlbumDto> = emptyList(),
+    val song: List<SongDto> = emptyList()
+)
+
+data class RandomSongs(
+    val song: List<SongDto> = emptyList()
 )
 
 data class AlbumList2(
@@ -73,6 +84,24 @@ data class PlaylistDto(
     val owner: String? = null,
     val public: Boolean? = null,
     val coverArt: String? = null
+)
+
+data class SongDto(
+    val id: String,
+    val title: String,
+    val album: String? = null,
+    val albumId: String? = null,
+    val artist: String? = null,
+    val artistId: String? = null,
+    val coverArt: String? = null,
+    val duration: Int = 0,
+    val track: Int? = null,
+    val year: Int? = null,
+    val genre: String? = null,
+    val size: Long = 0,
+    val contentType: String? = null,
+    val suffix: String? = null,
+    val starred: Boolean? = null
 )
 
 data class SubsonicError(

@@ -1,9 +1,9 @@
 package com.example.subnavi.data.repository
 
-import com.example.subnavi.data.local.ServerConfig
 import com.example.subnavi.data.local.ServerConfigStore
 import com.example.subnavi.data.remote.AlbumDto
 import com.example.subnavi.data.remote.PlaylistDto
+import com.example.subnavi.data.remote.SongDto
 import com.example.subnavi.data.remote.SubsonicApiClient
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -57,6 +57,24 @@ class MusicRepository @Inject constructor(
         val response = api.getAlbumList2(type = "alphabeticalByName", size = 100)
         val albums = response.subsonicResponse.albumList2?.album ?: emptyList()
         Result.success(albums)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getRandomSongs(): Result<List<SongDto>> = try {
+        val api = getApi()
+        val response = api.getRandomSongs()
+        val songs = response.subsonicResponse.randomSongs?.song ?: emptyList()
+        Result.success(songs)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun searchSongs(query: String): Result<List<SongDto>> = try {
+        val api = getApi()
+        val response = api.search3(query = query, albumCount = 0, songCount = 50)
+        val songs = response.subsonicResponse.searchResult3?.song ?: emptyList()
+        Result.success(songs)
     } catch (e: Exception) {
         Result.failure(e)
     }
