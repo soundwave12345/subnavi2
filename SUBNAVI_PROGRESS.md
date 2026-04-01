@@ -1,7 +1,7 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 5 — Songs screen**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 6 — Album detail screen**: BUILD GREEN, MISSING MANUAL TEST
 
 ### Bug fixes
 - **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
@@ -15,6 +15,7 @@
 | 3 — Home data | DONE WITH MISSING MANUAL TEST | 1) Scroll home → verificare sezioni "Recently Played", "Recently Added", "Playlists" caricano dati reali 2) Disabilitare rete → verificare stato errore (no crash) 3) Tappare album → verifica navigazione a detail 4) **Verificare artwork visibile** 5) Screenshots: `phase_03_home_loaded.png`, `phase_03_home_error.png` |
 | 4 — Albums screen | DONE WITH MISSING MANUAL TEST | 1) Verificare griglia album caricata **con artwork visibile** 2) Digitare query nella search bar → verificare filtraggio risultati 3) Cancellare ricerca → verificare ritorno tutti gli album 4) Tappare album → verificare navigazione detail 5) Screenshots: `phase_04_albums_grid.png`, `phase_04_albums_search.png` |
 | 5 — Songs screen | DONE WITH MISSING MANUAL TEST | 1) Verificare lista canzoni caricata **con artwork visibile** 2) Digitare query nella search bar → verificare filtraggio 3) Cancellare ricerca → verificare ritorno tutte le canzoni 4) Screenshots: `phase_05_songs_list.png`, `phase_05_songs_search.png` |
+| 6 — Album detail | DONE WITH MISSING MANUAL TEST | 1) Tappare album da Albums screen o Home → verificare apertura detail 2) Verificare artwork, titolo, artista, anno visibili 3) Verificare lista canzoni con numero traccia e durata 4) Verificare bottoni Play/Shuffle presenti (placeholder) 5) Tappare freccia back → verificare ritorno alla schermata precedente 6) Screenshot: `phase_06_album_detail.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -46,11 +47,11 @@
 - Cover art URLs need server base URL prepended (currently passing raw coverArt ID)
 
 ## Next planned step
-- **Phase 5 — Songs screen**
-  - Songs list
-  - Search bar
-  - Pull to refresh
-  - Song tap → placeholder (playback wired in Phase 8)
+- **Phase 7 — Playlists CRUD**
+  - Playlists grid with artwork
+  - Playlist detail screen with song list
+  - Create / delete / update playlist via API
+  - Management bottom sheet
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)

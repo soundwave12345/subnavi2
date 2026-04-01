@@ -1,6 +1,7 @@
 package com.example.subnavi.data.repository
 
 import com.example.subnavi.data.local.ServerConfigStore
+import com.example.subnavi.data.remote.AlbumDetailDto
 import com.example.subnavi.data.remote.AlbumDto
 import com.example.subnavi.data.remote.PlaylistDto
 import com.example.subnavi.data.remote.SongDto
@@ -22,6 +23,11 @@ class MusicRepository @Inject constructor(
 
     private fun SongDto.withCoverArtUrl() = copy(
         coverArt = apiClient.getCoverArtUrl(coverArt)
+    )
+
+    private fun AlbumDetailDto.withCoverArtUrls() = copy(
+        coverArt = apiClient.getCoverArtUrl(coverArt),
+        song = song.map { it.withCoverArtUrl() }
     )
 
     suspend fun getRecentAlbums(): Result<List<AlbumDto>> = try {
@@ -83,6 +89,16 @@ class MusicRepository @Inject constructor(
         val response = api.search3(query = query, albumCount = 0, songCount = 50)
         val songs = response.subsonicResponse.searchResult3?.song?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(songs)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getAlbumDetail(albumId: String): Result<AlbumDetailDto> = try {
+        val api = getApi()
+        val response = api.getAlbum(id = albumId)
+        val album = response.subsonicResponse.album
+            ?: return Result.failure(IllegalStateException("Album not found"))
+        Result.success(album.withCoverArtUrls())
     } catch (e: Exception) {
         Result.failure(e)
     }

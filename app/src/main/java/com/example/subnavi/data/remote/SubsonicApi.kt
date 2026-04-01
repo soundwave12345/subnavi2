@@ -31,6 +31,11 @@ interface SubsonicApi {
     suspend fun getRandomSongs(
         @Query("size") size: Int = 50
     ): SubsonicResponse
+
+    @GET("rest/getAlbum")
+    suspend fun getAlbum(
+        @Query("id") id: String
+    ): SubsonicResponse
 }
 
 data class SubsonicResponse(
@@ -44,7 +49,8 @@ data class SubsonicInner(
     @SerializedName("albumList2") val albumList2: AlbumList2? = null,
     val playlists: PlaylistsWrapper? = null,
     @SerializedName("searchResult3") val searchResult3: SearchResult3? = null,
-    @SerializedName("randomSongs") val randomSongs: RandomSongs? = null
+    @SerializedName("randomSongs") val randomSongs: RandomSongs? = null,
+    val album: AlbumDetailDto? = null
 )
 
 data class SearchResult3(
@@ -69,6 +75,19 @@ data class AlbumDto(
     val songCount: Int = 0,
     val year: Int? = null,
     val playCount: Long? = null
+)
+
+data class AlbumDetailDto(
+    val id: String,
+    val name: String,
+    val artist: String? = null,
+    val artistId: String? = null,
+    val coverArt: String? = null,
+    val songCount: Int = 0,
+    val year: Int? = null,
+    val playCount: Long? = null,
+    val genre: String? = null,
+    val song: List<SongDto> = emptyList()
 )
 
 data class PlaylistsWrapper(
