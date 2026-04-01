@@ -42,4 +42,22 @@ class MusicRepository @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    suspend fun searchAlbums(query: String): Result<List<AlbumDto>> = try {
+        val api = getApi()
+        val response = api.search3(query = query)
+        val albums = response.subsonicResponse.searchResult3?.album ?: emptyList()
+        Result.success(albums)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getAllAlbums(): Result<List<AlbumDto>> = try {
+        val api = getApi()
+        val response = api.getAlbumList2(type = "alphabeticalByName", size = 100)
+        val albums = response.subsonicResponse.albumList2?.album ?: emptyList()
+        Result.success(albums)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

@@ -16,7 +16,7 @@ class AuthRepository @Inject constructor(
     suspend fun testConnection(config: ServerConfig): Result<String> {
         return try {
             val api = apiClient.connect(config)
-            val response = api.ping(config.username, "", "")
+            val response = api.ping()
             val inner = response.subsonicResponse
             if (inner.status == "ok") {
                 Result.success("Connection successful (server v${inner.version})")

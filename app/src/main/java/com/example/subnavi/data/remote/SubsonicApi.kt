@@ -7,36 +7,24 @@ import retrofit2.http.Query
 interface SubsonicApi {
 
     @GET("rest/ping")
-    suspend fun ping(
-        @Query("u") username: String,
-        @Query("t") token: String,
-        @Query("s") salt: String,
-        @Query("v") version: String = "1.16.1",
-        @Query("c") client: String = "Subnavi",
-        @Query("f") format: String = "json"
-    ): SubsonicResponse
+    suspend fun ping(): SubsonicResponse
 
     @GET("rest/getAlbumList2")
     suspend fun getAlbumList2(
         @Query("type") type: String,
         @Query("size") size: Int = 20,
-        @Query("offset") offset: Int = 0,
-        @Query("u") username: String = "",
-        @Query("t") token: String = "",
-        @Query("s") salt: String = "",
-        @Query("v") version: String = "1.16.1",
-        @Query("c") client: String = "Subnavi",
-        @Query("f") format: String = "json"
+        @Query("offset") offset: Int = 0
     ): SubsonicResponse
 
     @GET("rest/getPlaylists")
-    suspend fun getPlaylists(
-        @Query("u") username: String = "",
-        @Query("t") token: String = "",
-        @Query("s") salt: String = "",
-        @Query("v") version: String = "1.16.1",
-        @Query("c") client: String = "Subnavi",
-        @Query("f") format: String = "json"
+    suspend fun getPlaylists(): SubsonicResponse
+
+    @GET("rest/search3")
+    suspend fun search3(
+        @Query("query") query: String,
+        @Query("albumCount") albumCount: Int = 20,
+        @Query("songCount") songCount: Int = 0,
+        @Query("artistCount") artistCount: Int = 0
     ): SubsonicResponse
 }
 
@@ -49,7 +37,12 @@ data class SubsonicInner(
     val version: String,
     val error: SubsonicError? = null,
     @SerializedName("albumList2") val albumList2: AlbumList2? = null,
-    val playlists: PlaylistsWrapper? = null
+    val playlists: PlaylistsWrapper? = null,
+    @SerializedName("searchResult3") val searchResult3: SearchResult3? = null
+)
+
+data class SearchResult3(
+    val album: List<AlbumDto> = emptyList()
 )
 
 data class AlbumList2(
