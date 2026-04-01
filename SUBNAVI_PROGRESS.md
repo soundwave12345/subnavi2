@@ -1,9 +1,15 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 0 — Project bootstrap / compile baseline**: DONE
-- Build: GREEN (`./gradlew :app:assembleDebug` + `:app:lintDebug` pass)
-- Emulator acceptance tests: NOT RUN (no emulator available on this machine)
+- **Phase 1 — Networking + Subsonic authentication**: DONE
+- Build: GREEN
+- Emulator acceptance tests: NOT RUN (no emulator)
+
+### Phase history
+| Phase | Status |
+|---|---|
+| 0 — Bootstrap | DONE |
+| 1 — Networking + Auth | DONE |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -37,12 +43,11 @@
 - JAVA_HOME must be set to `~/.sdkman/candidates/java/current`
 
 ## Next planned step
-- **Phase 1 — Networking + Subsonic authentication**
-  - Subsonic HTTP client (Retrofit + OkHttp)
-  - Auth token generation: `t = md5(password + salt)`
-  - `ping` endpoint
-  - DataStore for server config
-  - Onboarding screen (URL, username, password, test connection)
+- **Phase 2 — Navigation shell**
+  - NavHost with bottom navigation (Home, Playlists, Albums, Songs)
+  - Full-screen player route (no bottom bar)
+  - Settings entry point
+  - Screen shells only, no business logic
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)
