@@ -1,0 +1,6 @@
+root=true
+
+[*]
+ktlint_code_style = android_studio
+ktlint_android = true
+max_line_length = 120
