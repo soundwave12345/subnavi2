@@ -61,6 +61,11 @@ class SubsonicApiClient @Inject constructor() {
         return _api!!
     }
 
+    fun getCoverArtUrl(coverArtId: String?, size: Int = 300): String? {
+        if (coverArtId.isNullOrBlank() || currentBaseUrl.isBlank()) return null
+        return "${currentBaseUrl}rest/getCoverArt?id=$coverArtId&size=$size"
+    }
+
     private fun normalizeUrl(url: String): String {
         var base = url.trimEnd('/')
         return "$base/"

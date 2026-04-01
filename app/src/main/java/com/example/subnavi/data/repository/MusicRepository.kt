@@ -16,10 +16,18 @@ class MusicRepository @Inject constructor(
 ) {
     private suspend fun getApi() = apiClient.connect(configStore.config.first())
 
+    private fun AlbumDto.withCoverArtUrl() = copy(
+        coverArt = apiClient.getCoverArtUrl(coverArt)
+    )
+
+    private fun SongDto.withCoverArtUrl() = copy(
+        coverArt = apiClient.getCoverArtUrl(coverArt)
+    )
+
     suspend fun getRecentAlbums(): Result<List<AlbumDto>> = try {
         val api = getApi()
         val response = api.getAlbumList2(type = "recent")
-        val albums = response.subsonicResponse.albumList2?.album ?: emptyList()
+        val albums = response.subsonicResponse.albumList2?.album?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(albums)
     } catch (e: Exception) {
         Result.failure(e)
@@ -28,7 +36,7 @@ class MusicRepository @Inject constructor(
     suspend fun getNewestAlbums(): Result<List<AlbumDto>> = try {
         val api = getApi()
         val response = api.getAlbumList2(type = "newest")
-        val albums = response.subsonicResponse.albumList2?.album ?: emptyList()
+        val albums = response.subsonicResponse.albumList2?.album?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(albums)
     } catch (e: Exception) {
         Result.failure(e)
@@ -46,7 +54,7 @@ class MusicRepository @Inject constructor(
     suspend fun searchAlbums(query: String): Result<List<AlbumDto>> = try {
         val api = getApi()
         val response = api.search3(query = query)
-        val albums = response.subsonicResponse.searchResult3?.album ?: emptyList()
+        val albums = response.subsonicResponse.searchResult3?.album?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(albums)
     } catch (e: Exception) {
         Result.failure(e)
@@ -55,7 +63,7 @@ class MusicRepository @Inject constructor(
     suspend fun getAllAlbums(): Result<List<AlbumDto>> = try {
         val api = getApi()
         val response = api.getAlbumList2(type = "alphabeticalByName", size = 100)
-        val albums = response.subsonicResponse.albumList2?.album ?: emptyList()
+        val albums = response.subsonicResponse.albumList2?.album?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(albums)
     } catch (e: Exception) {
         Result.failure(e)
@@ -64,7 +72,7 @@ class MusicRepository @Inject constructor(
     suspend fun getRandomSongs(): Result<List<SongDto>> = try {
         val api = getApi()
         val response = api.getRandomSongs()
-        val songs = response.subsonicResponse.randomSongs?.song ?: emptyList()
+        val songs = response.subsonicResponse.randomSongs?.song?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(songs)
     } catch (e: Exception) {
         Result.failure(e)
@@ -73,7 +81,7 @@ class MusicRepository @Inject constructor(
     suspend fun searchSongs(query: String): Result<List<SongDto>> = try {
         val api = getApi()
         val response = api.search3(query = query, albumCount = 0, songCount = 50)
-        val songs = response.subsonicResponse.searchResult3?.song ?: emptyList()
+        val songs = response.subsonicResponse.searchResult3?.song?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(songs)
     } catch (e: Exception) {
         Result.failure(e)
