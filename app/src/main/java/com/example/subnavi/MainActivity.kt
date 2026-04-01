@@ -18,9 +18,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.subnavi.data.local.ServerConfig
 import com.example.subnavi.data.repository.AuthRepository
+import com.example.subnavi.PlayerViewModel
+import com.example.subnavi.playback.PlaybackManager
+import com.example.subnavi.playback.PlaybackState
 import com.example.subnavi.ui.navigation.Screen
 import com.example.subnavi.ui.navigation.SubnaviBottomBar
 import com.example.subnavi.ui.navigation.SubnaviNavHost
+import com.example.subnavi.ui.screen.MiniPlayer
 import com.example.subnavi.ui.theme.SubnaviTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -65,7 +69,9 @@ class MainViewModel @Inject constructor(
 @Composable
 fun SubnaviMain() {
     val viewModel: MainViewModel = hiltViewModel()
+    val playerViewModel: PlayerViewModel = hiltViewModel()
     val isConnected by viewModel.hasCredentials.collectAsState()
+    val playbackState by playerViewModel.playbackState.collectAsState()
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showBottomBar = currentRoute in listOf(
@@ -79,6 +85,14 @@ fun SubnaviMain() {
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
+                if (playbackState.currentSong != null) {
+                    MiniPlayer(
+                        state = playbackState,
+                        onPlayPause = playerViewModel::togglePlayPause,
+                        onNext = playerViewModel::skipNext,
+                        onClick = { navController.navigate(Screen.Player.route) }
+                    )
+                }
                 SubnaviBottomBar(navController)
             }
         }

@@ -1,7 +1,7 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 8 — Local playback service**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 9 — Persistent mini-player**: BUILD GREEN, MISSING MANUAL TEST
 
 ### Bug fixes
 - **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
@@ -18,6 +18,7 @@
 | 6 — Album detail | DONE WITH MISSING MANUAL TEST | 1) Tappare album da Albums screen o Home → verificare apertura detail 2) Verificare artwork, titolo, artista, anno visibili 3) Verificare lista canzoni con numero traccia e durata 4) Verificare bottoni Play/Shuffle presenti (placeholder) 5) Tappare freccia back → verificare ritorno alla schermata precedente 6) Screenshot: `phase_06_album_detail.png` |
 | 7 — Playlists CRUD | DONE WITH MISSING MANUAL TEST | 1) Tappare tab Playlists → verificare griglia caricata 2) Tappare + → inserire nome → verificare playlist creata 3) Tappare playlist → verificare detail con lista canzoni 4) Tappare cestino → verificare playlist eliminata 5) Screenshots: `phase_07_playlists_grid.png`, `phase_07_playlist_detail.png`, `phase_07_create.png` |
 | 8 — Playback | DONE WITH MISSING MANUAL TEST | 1) Tappare canzone da Songs → verificare riproduzione audio 2) Verificare notifica con titolo traccia 3) Tappare Play in Album Detail → verificare riproduzione 4) Tappare Shuffle → verificare ordine casuale 5) Tappare canzone in Playlist Detail → verificare riproduzione 6) Screenshot: `phase_08_notification.png` |
+| 9 — Mini-player | DONE WITH MISSING MANUAL TEST | 1) Avviare riproduzione canzone 2) Verificare mini-player visibile sopra bottom bar su Home/Albums/Songs/Playlists 3) Tappare play/pause nel mini-player → verificare cambio stato 4) Tappare skip next → verificare cambio traccia 5) Tappare mini-player → verificare navigazione a player 6) Screenshot: `phase_09_mini_player.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -49,10 +50,8 @@
 - Cover art URLs need server base URL prepended (currently passing raw coverArt ID)
 
 ## Next planned step
-- **Phase 9 — Persistent Mini-Player**
-  - Mini-player bar above bottom navigation
-  - Current track thumbnail, title, artist
-  - Play/pause, skip next controls
+- **Phase 10 — Full player screen**
+  - Full-screen player with album art, controls, progress bar, queue
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)
