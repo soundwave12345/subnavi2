@@ -59,26 +59,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.example.subnavi.CastViewModel
 import com.example.subnavi.LyricsViewModel
 import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.SubnaviApp
+import com.example.subnavi.cast.CastHelper
+import androidx.mediarouter.app.MediaRouteButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     navController: NavHostController,
     playerViewModel: PlayerViewModel = hiltViewModel(),
-    lyricsViewModel: LyricsViewModel = hiltViewModel()
+    lyricsViewModel: LyricsViewModel = hiltViewModel(),
+    castViewModel: CastViewModel = hiltViewModel()
 ) {
     val state by playerViewModel.playbackState.collectAsState()
     val lyricsState by lyricsViewModel.uiState.collectAsState()
+    val castConnected by castViewModel.isConnected.collectAsState()
     var showLyrics by remember { mutableStateOf(false) }
     val song = state.currentSong
+    val context = LocalContext.current
 
     LaunchedEffect(song?.id, showLyrics) {
         if (song != null && showLyrics) {
@@ -99,6 +106,17 @@ fun PlayerScreen(
                 }
             },
             actions = {
+                // Cast button
+                AndroidView(
+                    factory = { ctx ->
+                        val button = MediaRouteButton(ctx)
+                        com.google.android.gms.cast.framework.CastButtonFactory
+                            .setUpMediaRouteButton(ctx, button)
+                        castViewModel.setContext(ctx)
+                        button
+                    },
+                    modifier = Modifier.size(48.dp)
+                )
                 if (song != null) {
                     IconButton(onClick = { showLyrics = !showLyrics }) {
                         Icon(
@@ -106,6 +124,16 @@ fun PlayerScreen(
                             contentDescription = "Lyrics",
                             tint = if (showLyrics) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                // Cast: load song when connected
+                if (castConnected && song != null) {
+                    LaunchedEffect(song.id, castConnected) {
+                        CastHelper.loadSong(
+                            context,
+                            SubnaviApp.instance.playbackManager.apiClient,
+                            song
                         )
                     }
                 }

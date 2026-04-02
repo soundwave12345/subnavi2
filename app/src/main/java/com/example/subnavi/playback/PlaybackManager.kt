@@ -21,7 +21,7 @@ data class PlaybackState(
 
 @Singleton
 class PlaybackManager @Inject constructor(
-    private val apiClient: SubsonicApiClient
+    val apiClient: SubsonicApiClient
 ) {
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
