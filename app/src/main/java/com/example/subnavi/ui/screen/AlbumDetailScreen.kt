@@ -42,6 +42,7 @@ import coil3.compose.AsyncImage
 import com.example.subnavi.AlbumDetailViewModel
 import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.data.remote.SongDto
+import com.example.subnavi.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,7 +112,10 @@ fun AlbumDetailScreen(
                     SongRow(
                         song = song,
                         index = index + 1,
-                        onClick = { playerViewModel.play(context, album.song, index) }
+                        onClick = {
+                            playerViewModel.play(context, album.song, index)
+                            navController.navigate(Screen.Player.route)
+                        }
                     )
                 }
             }

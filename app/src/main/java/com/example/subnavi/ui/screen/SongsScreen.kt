@@ -33,6 +33,7 @@ import androidx.navigation.NavHostController
 import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.SongsViewModel
 import com.example.subnavi.data.remote.SongDto
+import com.example.subnavi.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +81,10 @@ fun SongsScreen(
                 itemsIndexed(state.songs) { index, song ->
                     SongListRow(
                         song = song,
-                        onClick = { playerViewModel.play(context, state.songs, index) }
+                        onClick = {
+                            playerViewModel.play(context, state.songs, index)
+                            navController.navigate(Screen.Player.route)
+                        }
                     )
                 }
             }
