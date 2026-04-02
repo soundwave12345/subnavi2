@@ -65,8 +65,8 @@ fun PlayerScreen(
     var showLyrics by remember { mutableStateOf(false) }
     val song = state.currentSong
 
-    LaunchedEffect(song?.id) {
-        if (song != null) {
+    LaunchedEffect(song?.id, showLyrics) {
+        if (song != null && showLyrics) {
             lyricsViewModel.loadLyrics()
         }
     }
