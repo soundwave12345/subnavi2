@@ -3,6 +3,7 @@ package com.example.subnavi.data.repository
 import com.example.subnavi.data.local.ServerConfigStore
 import com.example.subnavi.data.remote.AlbumDetailDto
 import com.example.subnavi.data.remote.AlbumDto
+import com.example.subnavi.data.remote.LyricsDto
 import com.example.subnavi.data.remote.PlaylistDetailDto
 import com.example.subnavi.data.remote.PlaylistDto
 import com.example.subnavi.data.remote.SongDto
@@ -146,6 +147,15 @@ class MusicRepository @Inject constructor(
         val api = getApi()
         api.updatePlaylist(playlistId = playlistId, name = name, comment = comment, public = public)
         Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getLyrics(artist: String?, title: String?): Result<LyricsDto?> = try {
+        val api = getApi()
+        val response = api.getLyrics(artist = artist, title = title)
+        val lyrics = response.subsonicResponse.lyrics
+        Result.success(lyrics)
     } catch (e: Exception) {
         Result.failure(e)
     }

@@ -1,6 +1,8 @@
 package com.example.subnavi.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,12 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,9 +31,11 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,6 +49,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.example.subnavi.LyricsViewModel
 import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.SubnaviApp
 
@@ -48,10 +57,19 @@ import com.example.subnavi.SubnaviApp
 @Composable
 fun PlayerScreen(
     navController: NavHostController,
-    playerViewModel: PlayerViewModel = hiltViewModel()
+    playerViewModel: PlayerViewModel = hiltViewModel(),
+    lyricsViewModel: LyricsViewModel = hiltViewModel()
 ) {
     val state by playerViewModel.playbackState.collectAsState()
+    val lyricsState by lyricsViewModel.uiState.collectAsState()
+    var showLyrics by remember { mutableStateOf(false) }
     val song = state.currentSong
+
+    LaunchedEffect(song?.id) {
+        if (song != null) {
+            lyricsViewModel.loadLyrics()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -64,21 +82,66 @@ fun PlayerScreen(
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
+            },
+            actions = {
+                if (song != null) {
+                    IconButton(onClick = { showLyrics = !showLyrics }) {
+                        Icon(
+                            Icons.Default.Lyrics,
+                            contentDescription = "Lyrics",
+                            tint = if (showLyrics) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (song != null) {
-            AsyncImage(
-                model = song.coverArt,
-                contentDescription = song.title,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clip(MaterialTheme.shapes.large),
-                contentScale = ContentScale.Crop
-            )
+                    .clip(MaterialTheme.shapes.large)
+            ) {
+                AsyncImage(
+                    model = song.coverArt,
+                    contentDescription = song.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                if (showLyrics) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f))
+                            .verticalScroll(rememberScrollState())
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (lyricsState.isLoading) {
+                            CircularProgressIndicator()
+                        } else if (lyricsState.lyrics != null) {
+                            Text(
+                                text = lyricsState.lyrics!!,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.8
+                            )
+                        } else {
+                            Text(
+                                "No lyrics available",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -132,30 +195,6 @@ fun PlayerScreen(
                         contentDescription = "Next",
                         modifier = Modifier.size(40.dp)
                     )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (state.queue.size > 1) {
-                Text(
-                    "Queue (${state.queueIndex + 1}/${state.queue.size})",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Column {
-                    state.queue.forEachIndexed { index, queueSong ->
-                        if (index != state.queueIndex) {
-                            Text(
-                                text = queueSong.title,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                        }
-                    }
                 }
             }
         } else {

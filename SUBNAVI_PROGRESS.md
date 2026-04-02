@@ -1,7 +1,7 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 10 — Full player screen**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 11 — Karaoke / Lyrics mode**: BUILD GREEN, MISSING MANUAL TEST
 
 ### Bug fixes
 - **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
@@ -20,6 +20,7 @@
 | 8 — Playback | DONE WITH MISSING MANUAL TEST | 1) Tappare canzone da Songs → verificare riproduzione audio 2) Verificare notifica con titolo traccia 3) Tappare Play in Album Detail → verificare riproduzione 4) Tappare Shuffle → verificare ordine casuale 5) Tappare canzone in Playlist Detail → verificare riproduzione 6) Screenshot: `phase_08_notification.png` |
 | 9 — Mini-player | DONE WITH MISSING MANUAL TEST | 1) Avviare riproduzione canzone 2) Verificare mini-player visibile sopra bottom bar su Home/Albums/Songs/Playlists 3) Tappare play/pause nel mini-player → verificare cambio stato 4) Tappare skip next → verificare cambio traccia 5) Tappare mini-player → verificare navigazione a player 6) Screenshot: `phase_09_mini_player.png` |
 | 10 — Full player | DONE WITH MISSING MANUAL TEST | 1) Tappare mini-player → verificare apertura full player 2) Verificare artwork grande, titolo, artista 3) Verificare seek bar funzionante 4) Verificare controlli prev/play-pause/next 5) Verificare coda visibile sotto i controlli 6) Screenshot: `phase_10_full_player.png` |
+| 11 — Lyrics | DONE WITH MISSING MANUAL TEST | 1) Aprire full player con traccia in riproduzione 2) Tappare icona Lyrics nella top bar → verificare overlay scuro con testo 3) Se testo disponibile su Navidrome → verificare testo mostrato 4) Se testo non disponibile → verificare messaggio "No lyrics available" 5) Tappare di nuovo icona → verificare chiusura overlay 6) Screenshot: `phase_11_lyrics_overlay.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -51,9 +52,8 @@
 - Cover art URLs need server base URL prepended (currently passing raw coverArt ID)
 
 ## Next planned step
-- **Phase 11 — Karaoke / Lyrics mode**
-  - Lyrics display synced with playback
-  - Add getLyrics endpoint
+- **Phase 12 — Chromecast**
+  - Google Cast sender integration
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)

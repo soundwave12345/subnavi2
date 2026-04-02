@@ -66,6 +66,12 @@ interface SubsonicApi {
         @Query("id") id: String,
         @Query("submission") submission: Boolean = true
     ): SubsonicResponse
+
+    @GET("rest/getLyrics")
+    suspend fun getLyrics(
+        @Query("artist") artist: String? = null,
+        @Query("title") title: String? = null
+    ): SubsonicResponse
 }
 
 data class SubsonicResponse(
@@ -81,7 +87,8 @@ data class SubsonicInner(
     @SerializedName("searchResult3") val searchResult3: SearchResult3? = null,
     @SerializedName("randomSongs") val randomSongs: RandomSongs? = null,
     val album: AlbumDetailDto? = null,
-    val playlist: PlaylistDetailDto? = null
+    val playlist: PlaylistDetailDto? = null,
+    val lyrics: LyricsDto? = null
 )
 
 data class SearchResult3(
@@ -169,4 +176,10 @@ data class SongDto(
 data class SubsonicError(
     val code: Int,
     val message: String
+)
+
+data class LyricsDto(
+    val artist: String? = null,
+    val title: String? = null,
+    val value: String? = null
 )
