@@ -1,5 +1,6 @@
 package com.example.subnavi
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.example.subnavi.data.remote.SongDto
 import com.example.subnavi.playback.PlaybackManager
@@ -15,8 +16,8 @@ class PlayerViewModel @Inject constructor(
 
     val playbackState: StateFlow<PlaybackState> = playbackManager.playbackState
 
-    fun play(songs: List<SongDto>, startIndex: Int = 0) {
-        playbackManager.play(songs, startIndex)
+    fun play(context: Context, songs: List<SongDto>, startIndex: Int = 0) {
+        playbackManager.play(context, songs, startIndex)
     }
 
     fun togglePlayPause() {

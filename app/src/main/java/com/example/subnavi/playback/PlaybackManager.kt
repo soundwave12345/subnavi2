@@ -6,12 +6,9 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.subnavi.data.remote.SongDto
 import com.example.subnavi.data.remote.SubsonicApiClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,7 +27,6 @@ class PlaybackManager @Inject constructor(
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     private var player: ExoPlayer? = null
-    private val scope = CoroutineScope(Dispatchers.Main)
 
     fun getPlayer(context: Context): ExoPlayer {
         return player ?: ExoPlayer.Builder(context).build().also {
@@ -54,8 +50,8 @@ class PlaybackManager @Inject constructor(
         }
     }
 
-    fun play(songs: List<SongDto>, startIndex: Int = 0) {
-        val exoPlayer = player ?: return
+    fun play(context: Context, songs: List<SongDto>, startIndex: Int = 0) {
+        val exoPlayer = getPlayer(context)
         val items = songs.map { song ->
             MediaItem.Builder()
                 .setMediaId(song.id)

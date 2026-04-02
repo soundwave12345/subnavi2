@@ -30,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,6 +50,7 @@ fun PlaylistDetailScreen(
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -91,13 +93,13 @@ fun PlaylistDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Button(
-                            onClick = { playerViewModel.play(playlist!!.entry, 0) },
+                            onClick = { playerViewModel.play(context, playlist!!.entry, 0) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Play")
                         }
                         OutlinedButton(
-                            onClick = { playerViewModel.play(playlist!!.entry.shuffled(), 0) },
+                            onClick = { playerViewModel.play(context, playlist!!.entry.shuffled(), 0) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Shuffle")
@@ -108,7 +110,7 @@ fun PlaylistDetailScreen(
                     PlaylistSongRow(
                         song = song,
                         index = index + 1,
-                        onClick = { playerViewModel.play(playlist.entry, index) }
+                        onClick = { playerViewModel.play(context, playlist.entry, index) }
                     )
                 }
             }

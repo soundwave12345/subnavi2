@@ -25,6 +25,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,6 +42,7 @@ fun SongsScreen(
     playerViewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text("Songs") })
@@ -78,7 +80,7 @@ fun SongsScreen(
                 itemsIndexed(state.songs) { index, song ->
                     SongListRow(
                         song = song,
-                        onClick = { playerViewModel.play(state.songs, index) }
+                        onClick = { playerViewModel.play(context, state.songs, index) }
                     )
                 }
             }
