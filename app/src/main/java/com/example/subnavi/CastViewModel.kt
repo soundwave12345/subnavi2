@@ -1,10 +1,13 @@
 package com.example.subnavi
 
 import android.content.Context
+import android.view.ContextThemeWrapper
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.subnavi.cast.CastHelper
+import com.google.android.gms.cast.framework.CastButtonFactory
 import com.google.android.gms.cast.framework.CastContext
+import androidx.mediarouter.app.MediaRouteButton
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,40 +21,27 @@ class CastViewModel @Inject constructor() : ViewModel() {
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
-    private var polling = false
+    // Hidden MediaRouteButton used only to trigger the Cast dialog
+    private var mediaRouteButton: MediaRouteButton? = null
 
-    fun showRouteSelector(context: Context) {
+    fun ensureCastButton(context: Context) {
+        if (mediaRouteButton != null) return
         try {
-            val castContext = CastContext.getSharedInstance(context)
-            val sessionManager = castContext.sessionManager
-            // If connected, end session. Otherwise, open the device picker dialog.
-            if (sessionManager.currentCastSession?.isConnected == true) {
-                sessionManager.endCurrentSession(true)
-            } else {
-                // Use MediaRouter to show the route chooser dialog
-                val mediaRouter = androidx.mediarouter.media.MediaRouter.getInstance(context)
-                val selector = androidx.mediarouter.media.MediaRouteSelector.Builder()
-                    .addControlCategory(
-                        com.google.android.gms.cast.CastMediaControlIntent
-                            .categoryForCast(
-                                com.google.android.gms.cast.CastMediaControlIntent
-                                    .DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
-                            )
-                    )
-                    .build()
-                val dialog = androidx.mediarouter.app.MediaRouteChooserDialog(context)
-                dialog.setRouteSelector(selector)
-                dialog.show()
-            }
+            val themedContext = ContextThemeWrapper(context, android.R.style.Theme_Material)
+            val button = MediaRouteButton(themedContext)
+            CastButtonFactory.setUpMediaRouteButton(context, button)
+            mediaRouteButton = button
+            startPolling(context)
         } catch (e: Exception) {
             // Cast not available on this device
         }
-        startPolling(context)
+    }
+
+    fun showRouteSelector() {
+        mediaRouteButton?.performClick()
     }
 
     private fun startPolling(context: Context) {
-        if (polling) return
-        polling = true
         viewModelScope.launch {
             try {
                 while (true) {
@@ -62,5 +52,10 @@ class CastViewModel @Inject constructor() : ViewModel() {
                 // Cast not available
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        mediaRouteButton = null
     }
 }
