@@ -12,8 +12,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class LyricsLine(
+    val timeMs: Long,
+    val text: String
+)
+
 data class LyricsUiState(
-    val lyrics: String? = null,
+    val lines: List<LyricsLine> = emptyList(),
+    val rawLyrics: String? = null,
+    val isSynced: Boolean = false,
     val isLoading: Boolean = false
 )
 
@@ -34,37 +41,74 @@ class LyricsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
-            // Try lrclib.net first
-            val lyrics = tryFetchFromLrcLib(artist, title)
-                ?: tryFetchFromLrcLib(null, title) // retry without artist
+            val result = tryFetchFromLrcLib(artist, title)
+                ?: tryFetchFromLrcLib(null, title)
                 ?: tryFetchFromSubsonic(artist, title)
 
-            _uiState.value = LyricsUiState(lyrics = lyrics, isLoading = false)
+            val synced = result?.first
+            val plain = result?.second
+            val lines = if (synced != null) parseLrc(synced) else emptyList()
+            _uiState.value = LyricsUiState(
+                lines = lines,
+                rawLyrics = synced ?: plain,
+                isSynced = synced != null,
+                isLoading = false
+            )
         }
     }
 
-    private suspend fun tryFetchFromLrcLib(artist: String?, title: String): String? {
+    private suspend fun tryFetchFromLrcLib(
+        artist: String?,
+        title: String
+    ): Pair<String?, String?>? {
         return try {
             if (artist != null) {
                 val result = LrcLibClient.api.get(artist = artist, title = title)
-                result.syncedLyrics ?: result.plainLyrics
+                result.syncedLyrics to result.plainLyrics
             } else {
                 val results = LrcLibClient.api.search(query = title)
-                results.firstOrNull()?.let {
-                    it.syncedLyrics ?: it.plainLyrics
-                }
+                results.firstOrNull()?.let { it.syncedLyrics to it.plainLyrics }
             }
         } catch (e: Exception) {
             null
         }
     }
 
-    private suspend fun tryFetchFromSubsonic(artist: String?, title: String): String? {
+    private suspend fun tryFetchFromSubsonic(
+        artist: String?,
+        title: String
+    ): Pair<String?, String?>? {
         return try {
             val result = musicRepository.getLyrics(artist = artist, title = title)
-            result.getOrNull()?.value
+            val value = result.getOrNull()?.value
+            if (value != null) null to value else null
         } catch (e: Exception) {
             null
         }
+    }
+
+    private fun parseLrc(lrc: String): List<LyricsLine> {
+        val lineRegex = Regex("""\[(\d{2}):(\d{2})[.:](\d{2,3})](.*)""")
+        return lrc.lines().mapNotNull { line ->
+            val match = lineRegex.matchEntire(line.trim()) ?: return@mapNotNull null
+            val min = match.groupValues[1].toLong()
+            val sec = match.groupValues[2].toLong()
+            val ms = match.groupValues[3].let {
+                if (it.length == 2) it.toLong() * 10 else it.toLong()
+            }
+            val text = match.groupValues[4].trim()
+            if (text.isEmpty()) return@mapNotNull null
+            LyricsLine(timeMs = min * 60_000 + sec * 1_000 + ms, text = text)
+        }.sortedBy { it.timeMs }
+    }
+
+    fun getCurrentLineIndex(positionMs: Long): Int {
+        val lines = _uiState.value.lines
+        if (lines.isEmpty()) return -1
+        var idx = -1
+        for (i in lines.indices) {
+            if (lines[i].timeMs <= positionMs) idx = i else break
+        }
+        return idx
     }
 }

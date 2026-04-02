@@ -1,5 +1,11 @@
 package com.example.subnavi.ui.screen
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +19,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,15 +44,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -90,7 +105,7 @@ fun PlayerScreen(
                             Icons.Default.Lyrics,
                             contentDescription = "Lyrics",
                             tint = if (showLyrics) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -114,30 +129,42 @@ fun PlayerScreen(
                 )
 
                 if (showLyrics) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f))
-                            .verticalScroll(rememberScrollState())
-                            .padding(24.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (lyricsState.isLoading) {
-                            CircularProgressIndicator()
-                        } else if (lyricsState.lyrics != null) {
-                            Text(
-                                text = lyricsState.lyrics!!,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.8
-                            )
-                        } else {
-                            Text(
-                                "No lyrics available",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-                            )
+                    val context = LocalContext.current
+                    val exoPlayer = SubnaviApp.instance.playbackManager.getPlayer(context)
+
+                    if (lyricsState.isSynced && lyricsState.lines.isNotEmpty()) {
+                        SyncedLyricsOverlay(
+                            lines = lyricsState.lines,
+                            exoPlayer = exoPlayer,
+                            getCurrentLineIndex = lyricsViewModel::getCurrentLineIndex
+                        )
+                    } else {
+                        // Plain lyrics fallback
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f))
+                                .verticalScroll(rememberScrollState())
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            if (lyricsState.isLoading) {
+                                CircularProgressIndicator()
+                            } else if (lyricsState.rawLyrics != null) {
+                                Text(
+                                    text = lyricsState.rawLyrics!!,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.White,
+                                    lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.8
+                                )
+                            } else {
+                                Text(
+                                    "No lyrics available",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = Color.White.copy(alpha = 0.6f)
+                                )
+                            }
                         }
                     }
                 }
@@ -161,9 +188,8 @@ fun PlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val exoPlayer = SubnaviApp.instance.playbackManager.getPlayer(
-                androidx.compose.ui.platform.LocalContext.current
-            )
+            val context = LocalContext.current
+            val exoPlayer = SubnaviApp.instance.playbackManager.getPlayer(context)
             PlayerSeekBar(exoPlayer)
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -210,9 +236,96 @@ fun PlayerScreen(
 }
 
 @Composable
+private fun SyncedLyricsOverlay(
+    lines: List<com.example.subnavi.LyricsLine>,
+    exoPlayer: ExoPlayer,
+    getCurrentLineIndex: (Long) -> Int
+) {
+    val listState = rememberLazyListState()
+    var currentLine by remember { mutableIntStateOf(-1) }
+
+    // Poll position every 200ms
+    val infiniteTransition = rememberInfiniteTransition(label = "lyricsPoll")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "lyricsProgress"
+    )
+
+    // Update current line index based on playback position
+    LaunchedEffect(progress) {
+        val pos = exoPlayer.currentPosition
+        currentLine = getCurrentLineIndex(pos)
+    }
+
+    // Auto-scroll to current line
+    LaunchedEffect(currentLine) {
+        if (currentLine >= 0) {
+            listState.animateScrollToItem(currentLine, scrollOffset = -200)
+        }
+    }
+
+    if (lines.isNotEmpty()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.85f))
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            item { Spacer(modifier = Modifier.height(120.dp)) }
+
+            itemsIndexed(lines) { index, line ->
+                val isActive = index == currentLine
+                val alpha = if (currentLine < 0) 0.7f
+                    else if (isActive) 1f
+                    else 0.35f
+
+                Text(
+                    text = line.text,
+                    color = Color.White.copy(alpha = alpha),
+                    fontSize = if (isActive) 18.sp else 15.sp,
+                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(120.dp)) }
+        }
+    }
+}
+
+@Composable
 private fun PlayerSeekBar(exoPlayer: ExoPlayer) {
     var position by remember { mutableFloatStateOf(0f) }
     val duration = exoPlayer.duration.coerceAtLeast(1).toFloat()
+
+    // Poll position every 500ms for smooth slider
+    val infiniteTransition = rememberInfiniteTransition(label = "seekBar")
+    val ticker by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "seekTicker"
+    )
+
+    LaunchedEffect(ticker) {
+        if (duration > 0) {
+            position = (exoPlayer.currentPosition / duration).coerceIn(0f, 1f)
+        }
+    }
 
     androidx.compose.runtime.DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
@@ -222,12 +335,6 @@ private fun PlayerSeekBar(exoPlayer: ExoPlayer) {
         }
         exoPlayer.addListener(listener)
         onDispose { exoPlayer.removeListener(listener) }
-    }
-
-    position = if (duration > 0) {
-        (exoPlayer.currentPosition / duration).coerceIn(0f, 1f)
-    } else {
-        0f
     }
 
     Row(
