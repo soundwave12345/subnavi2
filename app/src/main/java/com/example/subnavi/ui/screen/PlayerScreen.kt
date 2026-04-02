@@ -73,7 +73,6 @@ import com.example.subnavi.cast.CastHelper
 import android.content.Context
 import android.view.ContextThemeWrapper
 import androidx.mediarouter.app.MediaRouteButton
-import androidx.mediarouter.R as MediaRouterR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,10 +108,10 @@ fun PlayerScreen(
                 }
             },
             actions = {
-                // Cast button — use a themed context to avoid translucent background crash
+                // Cast button — force opaque background to avoid translucent crash
                 AndroidView(
                     factory = { ctx ->
-                        val themedContext = ContextThemeWrapper(ctx, MediaRouterR.style.Theme_MediaRouter)
+                        val themedContext = ContextThemeWrapper(ctx, android.R.style.Theme_Material)
                         val button = MediaRouteButton(themedContext)
                         com.google.android.gms.cast.framework.CastButtonFactory
                             .setUpMediaRouteButton(ctx, button)
