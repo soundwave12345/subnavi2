@@ -86,9 +86,9 @@ fun PlayerScreen(
     val song = state.currentSong
     val context = LocalContext.current
 
-    // Initialize hidden Cast button once
+    // Initialize Cast context once
     LaunchedEffect(Unit) {
-        castViewModel.ensureCastButton(context)
+        castViewModel.init(context)
     }
 
     LaunchedEffect(song?.id, showLyrics) {
@@ -110,9 +110,9 @@ fun PlayerScreen(
                 }
             },
             actions = {
-                // Cast button — delegates to hidden MediaRouteButton
+                // Cast button — uses MediaRouter directly
                 IconButton(onClick = {
-                    castViewModel.showRouteSelector()
+                    castViewModel.showRouteSelector(context)
                 }) {
                     Icon(
                         Icons.Default.Cast,

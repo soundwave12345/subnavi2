@@ -1,15 +1,15 @@
 package com.example.subnavi
 
+import android.app.AlertDialog
 import android.content.Context
 import android.util.Log
-import android.view.ContextThemeWrapper
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.subnavi.cast.CastHelper
-import com.google.android.gms.cast.framework.CastButtonFactory
+import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.cast.framework.CastContext
-import com.google.android.gms.cast.framework.CastState
-import androidx.mediarouter.app.MediaRouteButton
+import androidx.mediarouter.media.MediaRouteSelector
+import androidx.mediarouter.media.MediaRouter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,54 +27,87 @@ class CastViewModel @Inject constructor() : ViewModel() {
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
-    private var mediaRouteButton: MediaRouteButton? = null
+    private var castContext: CastContext? = null
+    private var mediaRouter: MediaRouter? = null
+    private var routeSelector: MediaRouteSelector? = null
 
-    fun ensureCastButton(context: Context) {
-        if (mediaRouteButton != null) {
-            Log.d(TAG, "ensureCastButton: already initialized")
-            return
-        }
-        Log.d(TAG, "ensureCastButton: initializing...")
+    fun init(context: Context) {
+        if (castContext != null) return
         try {
-            val themedContext = ContextThemeWrapper(context, android.R.style.Theme_Material)
-            val button = MediaRouteButton(themedContext)
-            Log.d(TAG, "ensureCastButton: MediaRouteButton created OK")
+            castContext = CastContext.getSharedInstance(context)
+            Log.d(TAG, "init: CastContext OK")
 
-            CastButtonFactory.setUpMediaRouteButton(context, button)
-            Log.d(TAG, "ensureCastButton: CastButtonFactory wired OK")
+            mediaRouter = MediaRouter.getInstance(context)
+            routeSelector = MediaRouteSelector.Builder()
+                .addControlCategory(
+                    CastMediaControlIntent.categoryForCast(
+                        CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
+                    )
+                )
+                .build()
+            Log.d(TAG, "init: MediaRouter + selector OK")
 
-            mediaRouteButton = button
-
-            // Check cast state
-            val castState = CastContext.getSharedInstance(context).castState
-            Log.d(TAG, "ensureCastButton: castState=$castState " +
-                "(0=NO_DEVICES, 1=NOT_CONNECTED, 2=CONNECTING, 3=CONNECTED)")
-
-            startPolling(context)
+            startPolling()
         } catch (e: Exception) {
-            Log.e(TAG, "ensureCastButton FAILED", e)
+            Log.e(TAG, "init FAILED", e)
         }
     }
 
-    fun showRouteSelector() {
-        Log.d(TAG, "showRouteSelector: button=${mediaRouteButton}")
-        if (mediaRouteButton == null) {
-            Log.e(TAG, "showRouteSelector: mediaRouteButton is NULL, cannot show dialog")
+    fun showRouteSelector(context: Context) {
+        Log.d(TAG, "showRouteSelector called")
+        val router = mediaRouter
+        val selector = routeSelector
+
+        if (router == null || selector == null) {
+            Log.e(TAG, "showRouteSelector: router=$router selector=$selector — not initialized")
             return
         }
-        try {
-            val result = mediaRouteButton!!.performClick()
-            Log.d(TAG, "showRouteSelector: performClick returned $result")
-        } catch (e: Exception) {
-            Log.e(TAG, "showRouteSelector: performClick FAILED", e)
+
+        // Check if connected — if so, disconnect
+        if (CastHelper.isConnected(context)) {
+            Log.d(TAG, "showRouteSelector: disconnecting current session")
+            try {
+                castContext?.sessionManager?.endCurrentSession(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "endCurrentSession FAILED", e)
+            }
+            return
         }
+
+        // Build list of available routes
+        val routes = router.routes.filter { route ->
+            route.isEnabled && route.matchesSelector(selector)
+        }
+        Log.d(TAG, "showRouteSelector: found ${routes.size} routes")
+
+        if (routes.isEmpty()) {
+            Log.d(TAG, "showRouteSelector: no routes, showing message")
+            AlertDialog.Builder(context)
+                .setTitle("Cast")
+                .setMessage("No devices found. Make sure your Chromecast is on the same WiFi network.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+
+        val names = routes.map { it.name }.toTypedArray()
+        AlertDialog.Builder(context)
+            .setTitle("Cast to device")
+            .setItems(names) { _, which ->
+                val selected = routes[which]
+                Log.d(TAG, "showRouteSelector: selected route=${selected.name} (${selected.id})")
+                router.selectRoute(selected)
+            }
+            .show()
     }
 
-    private fun startPolling(context: Context) {
+    private fun startPolling() {
         viewModelScope.launch {
             try {
+                val ctx = castContext ?: return@launch
                 while (true) {
-                    _isConnected.value = CastHelper.isConnected(context)
+                    _isConnected.value =
+                        ctx.sessionManager.currentCastSession?.isConnected == true
                     kotlinx.coroutines.delay(1000)
                 }
             } catch (e: Exception) {
@@ -85,6 +118,7 @@ class CastViewModel @Inject constructor() : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
-        mediaRouteButton = null
+        castContext = null
+        mediaRouter = null
     }
 }
