@@ -1,7 +1,7 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 11 — Karaoke / Lyrics mode**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 12 — Chromecast**: BUILD GREEN, MISSING MANUAL TEST
 
 ### Bug fixes
 - **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
@@ -21,6 +21,7 @@
 | 9 — Mini-player | DONE WITH MISSING MANUAL TEST | 1) Avviare riproduzione canzone 2) Verificare mini-player visibile sopra bottom bar su Home/Albums/Songs/Playlists 3) Tappare play/pause nel mini-player → verificare cambio stato 4) Tappare skip next → verificare cambio traccia 5) Tappare mini-player → verificare navigazione a player 6) Screenshot: `phase_09_mini_player.png` |
 | 10 — Full player | DONE WITH MISSING MANUAL TEST | 1) Tappare mini-player → verificare apertura full player 2) Verificare artwork grande, titolo, artista 3) Verificare seek bar funzionante 4) Verificare controlli prev/play-pause/next 5) Verificare coda visibile sotto i controlli 6) Screenshot: `phase_10_full_player.png` |
 | 11 — Lyrics | DONE WITH MISSING MANUAL TEST | 1) Aprire full player con traccia in riproduzione 2) Tappare icona Lyrics nella top bar → verificare overlay scuro con testo 3) Se testo disponibile su Navidrome → verificare testo mostrato 4) Se testo non disponibile → verificare messaggio "No lyrics available" 5) Tappare di nuovo icona → verificare chiusura overlay 6) Screenshot: `phase_11_lyrics_overlay.png` |
+| 12 — Chromecast | DONE WITH MISSING MANUAL TEST | 1) Verificare app lancia senza crash (Cast SDK inizializzato) 2) Verificare nessun errore CastContext nel logcat 3) Richiede dispositivo Chromecast fisico su LAN per test completo 4) Screenshot: `phase_12_cast_button.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -52,8 +53,8 @@
 - Cover art URLs need server base URL prepended (currently passing raw coverArt ID)
 
 ## Next planned step
-- **Phase 12 — Chromecast**
-  - Google Cast sender integration
+- **Phase 13 — Settings**
+  - Server settings, playback prefs, theme, cache management
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)

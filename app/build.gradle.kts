@@ -95,6 +95,9 @@ dependencies {
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
 
+    // Cast
+    implementation(libs.cast.framework)
+
     // DataStore
     implementation(libs.datastore.preferences)
 
