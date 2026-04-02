@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.example.subnavi.CastViewModel
@@ -162,12 +161,12 @@ fun PlayerScreen(
 
                 if (showLyrics) {
                     val context = LocalContext.current
-                    val exoPlayer = SubnaviApp.instance.playbackManager.getPlayer(context)
+                    val player = SubnaviApp.instance.playbackManager.getPlayer(context)
 
                     if (lyricsState.isSynced && lyricsState.lines.isNotEmpty()) {
                         SyncedLyricsOverlay(
                             lines = lyricsState.lines,
-                            exoPlayer = exoPlayer,
+                            player = player,
                             getCurrentLineIndex = lyricsViewModel::getCurrentLineIndex
                         )
                     } else {
@@ -221,8 +220,8 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             val context = LocalContext.current
-            val exoPlayer = SubnaviApp.instance.playbackManager.getPlayer(context)
-            PlayerSeekBar(exoPlayer)
+            val player = SubnaviApp.instance.playbackManager.getPlayer(context)
+            PlayerSeekBar(player)
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -270,7 +269,7 @@ fun PlayerScreen(
 @Composable
 private fun SyncedLyricsOverlay(
     lines: List<com.example.subnavi.LyricsLine>,
-    exoPlayer: ExoPlayer,
+    player: Player,
     getCurrentLineIndex: (Long) -> Int
 ) {
     val listState = rememberLazyListState()
@@ -290,7 +289,7 @@ private fun SyncedLyricsOverlay(
 
     // Update current line index based on playback position
     LaunchedEffect(progress) {
-        val pos = exoPlayer.currentPosition
+        val pos = player.currentPosition
         currentLine = getCurrentLineIndex(pos)
     }
 
@@ -337,9 +336,9 @@ private fun SyncedLyricsOverlay(
 }
 
 @Composable
-private fun PlayerSeekBar(exoPlayer: ExoPlayer) {
+private fun PlayerSeekBar(player: Player) {
     var position by remember { mutableFloatStateOf(0f) }
-    val duration = exoPlayer.duration.coerceAtLeast(1).toFloat()
+    val duration = player.duration.coerceAtLeast(1).toFloat()
 
     // Poll position every 500ms for smooth slider
     val infiniteTransition = rememberInfiniteTransition(label = "seekBar")
@@ -355,18 +354,18 @@ private fun PlayerSeekBar(exoPlayer: ExoPlayer) {
 
     LaunchedEffect(ticker) {
         if (duration > 0) {
-            position = (exoPlayer.currentPosition / duration).coerceIn(0f, 1f)
+            position = (player.currentPosition / duration).coerceIn(0f, 1f)
         }
     }
 
-    androidx.compose.runtime.DisposableEffect(exoPlayer) {
+    androidx.compose.runtime.DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onPositionDiscontinuity(reason: Int) {
-                position = (exoPlayer.currentPosition / duration).coerceIn(0f, 1f)
+                position = (player.currentPosition / duration).coerceIn(0f, 1f)
             }
         }
-        exoPlayer.addListener(listener)
-        onDispose { exoPlayer.removeListener(listener) }
+        player.addListener(listener)
+        onDispose { player.removeListener(listener) }
     }
 
     Row(
@@ -374,7 +373,7 @@ private fun PlayerSeekBar(exoPlayer: ExoPlayer) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = formatMs(exoPlayer.currentPosition),
+            text = formatMs(player.currentPosition),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -382,12 +381,12 @@ private fun PlayerSeekBar(exoPlayer: ExoPlayer) {
             value = position,
             onValueChange = { newPos ->
                 position = newPos
-                exoPlayer.seekTo((newPos * duration).toLong())
+                player.seekTo((newPos * duration).toLong())
             },
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp)
         )
         Text(
-            text = formatMs(exoPlayer.duration.coerceAtLeast(0)),
+            text = formatMs(player.duration.coerceAtLeast(0)),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
