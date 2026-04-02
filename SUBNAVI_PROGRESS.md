@@ -1,7 +1,9 @@
 # SUBNAVI_PROGRESS.md
 
 ## Last completed phase
-- **Phase 13 — Settings**: BUILD GREEN, MISSING MANUAL TEST
+- **Phase 14 — Android Auto**: BUILD GREEN, MISSING MANUAL TEST
+
+All 14 phases are now complete!
 
 ### Bug fixes
 - **Cover art fix**: cover art IDs were passed raw to Coil. Now `SubsonicApiClient.getCoverArtUrl()` constructs `{baseUrl}/rest/getCoverArt?id={id}&size=300` and MusicRepository maps all DTOs.
@@ -23,6 +25,7 @@
 | 11 — Lyrics | DONE WITH MISSING MANUAL TEST | 1) Aprire full player con traccia in riproduzione 2) Tappare icona Lyrics nella top bar → verificare overlay scuro con testo 3) Se testo disponibile su Navidrome → verificare testo mostrato 4) Se testo non disponibile → verificare messaggio "No lyrics available" 5) Tappare di nuovo icona → verificare chiusura overlay 6) Screenshot: `phase_11_lyrics_overlay.png` |
 | 12 — Chromecast | DONE WITH MISSING MANUAL TEST | 1) Verificare app lancia senza crash (Cast SDK inizializzato) 2) Verificare nessun errore CastContext nel logcat 3) Richiede dispositivo Chromecast fisico su LAN per test completo 4) Screenshot: `phase_12_cast_button.png` |
 | 13 — Settings | DONE WITH MISSING MANUAL TEST | 1) Navigare a Settings → verificare sezioni Server/Playback/About visibili 2) Verificare URL e username mostrati 3) Tappare "Test Connection" → verificare risultato 4) Tappare "Disconnect" → verificare ritorno a onboarding 5) Screenshot: `phase_13_settings.png` |
+| 14 — Android Auto | DONE WITH MISSING MANUAL TEST | 1) Verificare MediaLibraryService dichiarato nel manifest 2) Verificare servizio si avvia senza crash 3) Richiede Android Auto DHU o head unit reale per test completo 4) Screenshot: `phase_14_service_running.png` |
 
 ## Dependency versions (from `libs.versions.toml`)
 | Dependency | Version |
@@ -54,8 +57,7 @@
 - Cover art URLs need server base URL prepended (currently passing raw coverArt ID)
 
 ## Next planned step
-- **Phase 14 — Android Auto**
-  - Media3 MediaLibraryService browsing for Android Auto
+- All 14 phases complete! Future work: polish, performance, error handling improvements.
 
 ## Emulator AVD
 - Name: `Subnavi_AVD` (API 35, Pixel 6)
