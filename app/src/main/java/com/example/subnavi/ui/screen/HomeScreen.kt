@@ -160,25 +160,44 @@ fun PlaylistSection(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            playlists.forEach { playlist ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onPlaylistClick(playlist) }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(playlist.name, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            "${playlist.songCount} songs",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(playlists, key = { it.id }) { playlist ->
+                PlaylistCard(playlist = playlist, onClick = { onPlaylistClick(playlist) })
             }
         }
+    }
+}
+
+@Composable
+fun PlaylistCard(playlist: PlaylistDto, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(140.dp)
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        AsyncImage(
+            model = playlist.coverArt,
+            contentDescription = playlist.name,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(MaterialTheme.shapes.medium),
+            contentScale = ContentScale.Crop
+        )
+        Text(
+            text = playlist.name,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1
+        )
+        Text(
+            text = "${playlist.songCount} songs",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }

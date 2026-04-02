@@ -80,19 +80,22 @@ fun SubnaviMain() {
         Screen.Songs.route,
         Screen.Playlists.route
     )
+    val showMiniPlayer = playbackState.currentSong != null &&
+        currentRoute != Screen.Player.route &&
+        currentRoute != Screen.Onboarding.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
+            if (showMiniPlayer) {
+                MiniPlayer(
+                    state = playbackState,
+                    onPlayPause = playerViewModel::togglePlayPause,
+                    onNext = playerViewModel::skipNext,
+                    onClick = { navController.navigate(Screen.Player.route) }
+                )
+            }
             if (showBottomBar) {
-                if (playbackState.currentSong != null) {
-                    MiniPlayer(
-                        state = playbackState,
-                        onPlayPause = playerViewModel::togglePlayPause,
-                        onNext = playerViewModel::skipNext,
-                        onClick = { navController.navigate(Screen.Player.route) }
-                    )
-                }
                 SubnaviBottomBar(navController)
             }
         }

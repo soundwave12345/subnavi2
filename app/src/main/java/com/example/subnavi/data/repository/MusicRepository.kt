@@ -37,6 +37,10 @@ class MusicRepository @Inject constructor(
         entry = entry.map { it.withCoverArtUrl() }
     )
 
+    private fun PlaylistDto.withCoverArtUrl() = copy(
+        coverArt = apiClient.getCoverArtUrl(coverArt)
+    )
+
     suspend fun getRecentAlbums(): Result<List<AlbumDto>> = try {
         val api = getApi()
         val response = api.getAlbumList2(type = "recent")
@@ -58,7 +62,7 @@ class MusicRepository @Inject constructor(
     suspend fun getPlaylists(): Result<List<PlaylistDto>> = try {
         val api = getApi()
         val response = api.getPlaylists()
-        val playlists = response.subsonicResponse.playlists?.playlist ?: emptyList()
+        val playlists = response.subsonicResponse.playlists?.playlist?.map { it.withCoverArtUrl() } ?: emptyList()
         Result.success(playlists)
     } catch (e: Exception) {
         Result.failure(e)
