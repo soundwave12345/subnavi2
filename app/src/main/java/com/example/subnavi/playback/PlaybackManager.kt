@@ -1,6 +1,7 @@
 package com.example.subnavi.playback
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.media3.cast.CastPlayer
@@ -113,6 +114,13 @@ class PlaybackManager @Inject constructor(
         player.setMediaItems(items, startIndex, 0)
         player.prepare()
         player.playWhenReady = true
+
+        // Start the media service for notification controls
+        try {
+            val intent = Intent(context, SubnaviPlaybackService::class.java)
+            context.startForegroundService(intent)
+        } catch (_: Exception) {}
+
         _playbackState.value = PlaybackState(
             currentSong = songs.getOrNull(startIndex),
             queue = songs,
