@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.CircularProgressIndicator
@@ -59,7 +60,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -70,9 +70,6 @@ import com.example.subnavi.LyricsViewModel
 import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.SubnaviApp
 import com.example.subnavi.cast.CastHelper
-import android.content.Context
-import android.view.ContextThemeWrapper
-import androidx.mediarouter.app.MediaRouteButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,18 +105,17 @@ fun PlayerScreen(
                 }
             },
             actions = {
-                // Cast button — force opaque background to avoid translucent crash
-                AndroidView(
-                    factory = { ctx ->
-                        val themedContext = ContextThemeWrapper(ctx, android.R.style.Theme_Material)
-                        val button = MediaRouteButton(themedContext)
-                        com.google.android.gms.cast.framework.CastButtonFactory
-                            .setUpMediaRouteButton(ctx, button)
-                        castViewModel.setContext(ctx)
-                        button
-                    },
-                    modifier = Modifier.size(48.dp)
-                )
+                // Cast button — use Compose IconButton to avoid MediaRouteButton theme crash
+                IconButton(onClick = {
+                    castViewModel.showRouteSelector(context)
+                }) {
+                    Icon(
+                        Icons.Default.Cast,
+                        contentDescription = "Cast",
+                        tint = if (castConnected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface
+                    )
+                }
                 if (song != null) {
                     IconButton(onClick = { showLyrics = !showLyrics }) {
                         Icon(

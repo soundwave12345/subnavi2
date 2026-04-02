@@ -62,6 +62,7 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
+    implementation(libs.appcompat)
 
     // Lifecycle
     implementation(libs.lifecycle.runtime.ktx)
