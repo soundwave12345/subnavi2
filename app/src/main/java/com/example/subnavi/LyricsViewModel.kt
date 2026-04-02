@@ -2,7 +2,7 @@ package com.example.subnavi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.subnavi.data.remote.LyricsDto
+import com.example.subnavi.data.remote.LrcLibClient
 import com.example.subnavi.data.repository.MusicRepository
 import com.example.subnavi.playback.PlaybackManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,11 +28,43 @@ class LyricsViewModel @Inject constructor(
 
     fun loadLyrics() {
         val song = playbackManager.playbackState.value.currentSong ?: return
+        val artist = song.artist
+        val title = song.title
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val result = musicRepository.getLyrics(artist = song.artist, title = song.title)
-            val text = result.getOrNull()?.value
-            _uiState.value = LyricsUiState(lyrics = text, isLoading = false)
+
+            // Try lrclib.net first
+            val lyrics = tryFetchFromLrcLib(artist, title)
+                ?: tryFetchFromLrcLib(null, title) // retry without artist
+                ?: tryFetchFromSubsonic(artist, title)
+
+            _uiState.value = LyricsUiState(lyrics = lyrics, isLoading = false)
+        }
+    }
+
+    private suspend fun tryFetchFromLrcLib(artist: String?, title: String): String? {
+        return try {
+            if (artist != null) {
+                val result = LrcLibClient.api.get(artist = artist, title = title)
+                result.syncedLyrics ?: result.plainLyrics
+            } else {
+                val results = LrcLibClient.api.search(query = title)
+                results.firstOrNull()?.let {
+                    it.syncedLyrics ?: it.plainLyrics
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun tryFetchFromSubsonic(artist: String?, title: String): String? {
+        return try {
+            val result = musicRepository.getLyrics(artist = artist, title = title)
+            result.getOrNull()?.value
+        } catch (e: Exception) {
+            null
         }
     }
 }
