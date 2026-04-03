@@ -55,8 +55,8 @@ class MainActivity : ComponentActivity() {
 class MainViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val _hasCredentials = MutableStateFlow(false)
-    val hasCredentials: StateFlow<Boolean> = _hasCredentials.asStateFlow()
+    private val _hasCredentials = MutableStateFlow<Boolean?>(null)
+    val hasCredentials: StateFlow<Boolean?> = _hasCredentials.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -76,6 +76,12 @@ fun SubnaviMain() {
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val isConnected by viewModel.hasCredentials.collectAsState()
     val playbackState by playerViewModel.playbackState.collectAsState()
+
+    // Wait for credentials check before rendering navigation
+    if (isConnected == null) {
+        return
+    }
+    val connected = isConnected!! // safe after null check
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val showBottomBar = currentRoute in listOf(
@@ -99,7 +105,7 @@ fun SubnaviMain() {
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             SubnaviNavHost(
                 navController = navController,
-                isConnected = isConnected,
+                isConnected = connected,
                 modifier = Modifier.fillMaxSize()
             )
 
