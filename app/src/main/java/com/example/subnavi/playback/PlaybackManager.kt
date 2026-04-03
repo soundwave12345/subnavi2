@@ -116,10 +116,8 @@ class PlaybackManager @Inject constructor(
         player.playWhenReady = true
 
         // Start the media service for notification controls
-        try {
-            val intent = Intent(context, SubnaviPlaybackService::class.java)
-            context.startForegroundService(intent)
-        } catch (_: Exception) {}
+        val intent = Intent(context, SubnaviPlaybackService::class.java)
+        context.startForegroundService(intent)
 
         _playbackState.value = PlaybackState(
             currentSong = songs.getOrNull(startIndex),

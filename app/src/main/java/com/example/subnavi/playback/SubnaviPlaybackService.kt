@@ -9,13 +9,12 @@ import com.example.subnavi.SubnaviApp
 
 class SubnaviPlaybackService : MediaLibraryService() {
 
-    private var mediaSession: MediaSession? = null
+    private var mediaSession: MediaLibraryService.MediaLibrarySession? = null
 
     override fun onCreate() {
         super.onCreate()
 
-        val playbackManager = SubnaviApp.instance.playbackManager
-        val player = playbackManager.getPlayer(this)
+        val player = SubnaviApp.instance.playbackManager.getPlayer(this)
         player.setAudioAttributes(
             AudioAttributes.Builder()
                 .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
@@ -24,13 +23,15 @@ class SubnaviPlaybackService : MediaLibraryService() {
             true
         )
 
-        mediaSession = MediaSession.Builder(this, player)
-            .setCallback(object : MediaLibraryService.MediaLibrarySession.Callback {})
-            .build()
+        mediaSession = MediaLibraryService.MediaLibrarySession.Builder(
+                this,
+                player,
+                object : MediaLibraryService.MediaLibrarySession.Callback {}
+            ).build()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
-        return mediaSession as? MediaLibrarySession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibraryService.MediaLibrarySession? {
+        return mediaSession
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -41,10 +42,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
-        mediaSession?.run {
-            player.release()
-            release()
-        }
+        mediaSession?.release()
         mediaSession = null
         super.onDestroy()
     }
