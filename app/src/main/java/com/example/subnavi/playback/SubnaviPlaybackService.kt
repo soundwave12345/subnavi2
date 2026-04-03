@@ -29,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.guava.asListenableFuture
+import kotlinx.coroutines.launch
 
 class SubnaviPlaybackService : MediaLibraryService() {
 
@@ -48,6 +49,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
 
     private var mediaSession: MediaLibrarySession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var cachedSearchResults: List<SongDto> = emptyList()
 
     override fun onCreate() {
         super.onCreate()
@@ -162,9 +164,11 @@ class SubnaviPlaybackService : MediaLibraryService() {
                     } else if (parentId.startsWith(PLAYLIST_PREFIX)) {
                         loadPlaylistSongs(parentId.removePrefix(PLAYLIST_PREFIX), params)
                     } else {
-                        Futures.immediateFuture(
-                            LibraryResult.ofItemList(ImmutableList.of(), params)
+                        // Search results: return cached search results
+                        val items = ImmutableList.copyOf(
+                            cachedSearchResults.map { buildSongMediaItem(it) }
                         )
+                        Futures.immediateFuture(LibraryResult.ofItemList(items, params))
                     }
                 }
             }
@@ -176,6 +180,22 @@ class SubnaviPlaybackService : MediaLibraryService() {
             mediaId: String
         ): ListenableFuture<LibraryResult<MediaItem>> {
             return loadItem(mediaId)
+        }
+
+        override fun onSearch(
+            session: MediaLibraryService.MediaLibrarySession,
+            browser: ControllerInfo,
+            query: String,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<Void>> {
+            serviceScope.launch {
+                val repo = getRepository()
+                if (repo != null) {
+                    cachedSearchResults = repo.searchSongs(query).getOrNull() ?: emptyList()
+                    session.notifySearchResultChanged(browser, query, cachedSearchResults.size, params)
+                }
+            }
+            return Futures.immediateFuture(LibraryResult.ofVoid())
         }
     }
 
