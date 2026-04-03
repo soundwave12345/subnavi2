@@ -32,12 +32,13 @@ fun MiniPlayer(
     state: PlaybackState,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val song = state.currentSong ?: return
 
     ElevatedCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {

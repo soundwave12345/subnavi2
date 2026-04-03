@@ -4,13 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -87,23 +91,31 @@ fun SubnaviMain() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (showMiniPlayer) {
-                MiniPlayer(
-                    state = playbackState,
-                    onPlayPause = playerViewModel::togglePlayPause,
-                    onNext = playerViewModel::skipNext,
-                    onClick = { navController.navigate(Screen.Player.route) }
-                )
-            }
             if (showBottomBar) {
                 SubnaviBottomBar(navController)
             }
         }
     ) { innerPadding ->
-        SubnaviNavHost(
-            navController = navController,
-            isConnected = isConnected,
-            modifier = Modifier.padding(innerPadding)
-        )
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            SubnaviNavHost(
+                navController = navController,
+                isConnected = isConnected,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // MiniPlayer floats above everything, anchored to bottom
+            if (showMiniPlayer) {
+                MiniPlayer(
+                    state = playbackState,
+                    onPlayPause = playerViewModel::togglePlayPause,
+                    onNext = playerViewModel::skipNext,
+                    onClick = { navController.navigate(Screen.Player.route) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+        }
     }
 }
