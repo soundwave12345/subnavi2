@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,19 +28,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,9 +60,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -146,6 +159,28 @@ fun PlayerScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (song != null) {
+            // Blurred background from cover art
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }
+            ) {
+                AsyncImage(
+                    model = song.coverArt,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(80.dp),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
+                )
+            }
+
+            // Cover art with heart and playlist buttons
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -158,6 +193,52 @@ fun PlayerScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
+
+                // Bottom overlay with heart (left) and playlist (right)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Heart / Favorite button
+                    val isStarred by playerViewModel.isStarred.collectAsState()
+                    IconButton(onClick = { playerViewModel.toggleStar() }) {
+                        Icon(
+                            if (isStarred) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (isStarred) "Unstar" else "Star",
+                            tint = if (isStarred) Color.Red else Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    // Add to playlist button
+                    var showPlaylistDialog by remember { mutableStateOf(false) }
+                    IconButton(onClick = {
+                        playerViewModel.loadPlaylists()
+                        showPlaylistDialog = true
+                    }) {
+                        Icon(
+                            Icons.Default.QueueMusic,
+                            contentDescription = "Add to playlist",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    if (showPlaylistDialog) {
+                        AddToPlaylistDialog(
+                            viewModel = playerViewModel,
+                            songId = song.id,
+                            onDismiss = { showPlaylistDialog = false }
+                        )
+                    }
+                }
 
                 if (showLyrics) {
                     val context = LocalContext.current
@@ -398,4 +479,92 @@ private fun formatMs(ms: Long): String {
     val m = totalSec / 60
     val s = totalSec % 60
     return "$m:${s.toString().padStart(2, '0')}"
+}
+
+@Composable
+private fun AddToPlaylistDialog(
+    viewModel: PlayerViewModel,
+    songId: String,
+    onDismiss: () -> Unit
+) {
+    val playlists by viewModel.playlists.collectAsState()
+    var newPlaylistName by remember { mutableStateOf("") }
+    var showCreateField by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add to playlist") },
+        text = {
+            Column {
+                if (playlists.isEmpty()) {
+                    Text("No playlists found", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                        items(playlists.size) { index ->
+                            val playlist = playlists[index]
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.addToPlaylist(playlist.id, songId) { onDismiss() }
+                                    }
+                                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.QueueMusic,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(playlist.name, style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (showCreateField) {
+                    OutlinedTextField(
+                        value = newPlaylistName,
+                        onValueChange = { newPlaylistName = it },
+                        label = { Text("New playlist name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showCreateField = false }) {
+                            Text("Cancel")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextButton(
+                            onClick = {
+                                if (newPlaylistName.isNotBlank()) {
+                                    viewModel.createPlaylistAndAdd(newPlaylistName, songId) { onDismiss() }
+                                }
+                            },
+                            enabled = newPlaylistName.isNotBlank()
+                        ) {
+                            Text("Create")
+                        }
+                    }
+                } else {
+                    TextButton(onClick = { showCreateField = true }) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Create new playlist")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Done") }
+        }
+    )
 }

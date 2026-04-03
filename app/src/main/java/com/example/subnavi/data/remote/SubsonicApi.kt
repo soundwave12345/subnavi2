@@ -72,6 +72,22 @@ interface SubsonicApi {
         @Query("artist") artist: String? = null,
         @Query("title") title: String? = null
     ): SubsonicResponse
+
+    @GET("rest/star")
+    suspend fun star(
+        @Query("id") id: String
+    ): SubsonicResponse
+
+    @GET("rest/unstar")
+    suspend fun unstar(
+        @Query("id") id: String
+    ): SubsonicResponse
+
+    @GET("rest/updatePlaylist")
+    suspend fun addToPlaylist(
+        @Query("playlistId") playlistId: String,
+        @Query("songIdToAdd") songIdToAdd: String
+    ): SubsonicResponse
 }
 
 data class SubsonicResponse(

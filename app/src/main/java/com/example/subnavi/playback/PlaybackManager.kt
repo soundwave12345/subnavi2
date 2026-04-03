@@ -25,7 +25,8 @@ data class PlaybackState(
     val queue: List<SongDto> = emptyList(),
     val queueIndex: Int = -1,
     val isPlaying: Boolean = false,
-    val isCasting: Boolean = false
+    val isCasting: Boolean = false,
+    val isStarred: Boolean = false
 )
 
 @Singleton

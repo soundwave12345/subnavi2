@@ -163,4 +163,28 @@ class MusicRepository @Inject constructor(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    suspend fun starSong(songId: String): Result<Unit> = try {
+        val api = getApi()
+        api.star(id = songId)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun unstarSong(songId: String): Result<Unit> = try {
+        val api = getApi()
+        api.unstar(id = songId)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun addToPlaylist(playlistId: String, songId: String): Result<Unit> = try {
+        val api = getApi()
+        api.addToPlaylist(playlistId = playlistId, songIdToAdd = songId)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }
