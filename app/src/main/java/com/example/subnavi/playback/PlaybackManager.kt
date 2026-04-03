@@ -14,6 +14,12 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.example.subnavi.cast.SubnaviMediaItemConverter
 import com.example.subnavi.data.remote.SongDto
 import com.example.subnavi.data.remote.SubsonicApiClient
+import com.google.android.gms.cast.MediaMetadata as CastMetadata
+import com.google.android.gms.cast.MediaInfo
+import com.google.android.gms.cast.MediaQueueItem
+import com.google.android.gms.cast.MediaStatus
+import com.google.android.gms.cast.framework.CastContext
+import com.google.android.gms.common.images.WebImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,20 +71,21 @@ class PlaybackManager @Inject constructor(
                     val state = _playbackState.value
                     if (state.queue.isEmpty()) return
 
-                    // Preserve position
                     val pos = oldPlayer.currentPosition
                     val idx = oldPlayer.currentMediaItemIndex
 
-                    // Rebuild media items on new player
-                    val items = state.queue.map { song ->
-                        buildMediaItem(song)
-                    }
-                    newPlayer.setMediaItems(items, idx, pos)
-                    newPlayer.prepare()
-                    newPlayer.playWhenReady = oldPlayer.playWhenReady
-
                     val isRemote = newPlayer.deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE
                     _playbackState.value = state.copy(isCasting = isRemote)
+
+                    if (isRemote) {
+                        // Load queue directly via Cast SDK
+                        loadQueueOnCast(context, state.queue, idx, pos, oldPlayer.playWhenReady)
+                    } else {
+                        val items = state.queue.map { song -> buildMediaItem(song) }
+                        newPlayer.setMediaItems(items, idx, pos)
+                        newPlayer.prepare()
+                        newPlayer.playWhenReady = oldPlayer.playWhenReady
+                    }
                 }
             })
             .build()
@@ -110,11 +117,6 @@ class PlaybackManager @Inject constructor(
 
     fun play(context: Context, songs: List<SongDto>, startIndex: Int = 0) {
         val player = getPlayer(context)
-        val items = songs.map { song -> buildMediaItem(song) }
-        player.clearMediaItems()
-        player.setMediaItems(items, startIndex, 0)
-        player.prepare()
-        player.playWhenReady = true
 
         // Start the media service for notification controls
         val intent = Intent(context, SubnaviPlaybackService::class.java)
@@ -127,6 +129,64 @@ class PlaybackManager @Inject constructor(
             isPlaying = true,
             isCasting = _playbackState.value.isCasting
         )
+
+        val isCasting = _playbackState.value.isCasting
+        if (isCasting && loadQueueOnCast(context, songs, startIndex, 0L, true)) {
+            Log.d(TAG, "play: loaded queue directly on Cast (${songs.size} songs)")
+        } else {
+            val items = songs.map { song -> buildMediaItem(song) }
+            player.clearMediaItems()
+            player.setMediaItems(items, startIndex, 0)
+            player.prepare()
+            player.playWhenReady = true
+        }
+    }
+
+    /**
+     * Load the full queue directly via RemoteMediaClient.queueLoad().
+     * This bypasses RemoteCastPlayer which may not properly handle multi-item queues.
+     */
+    private fun loadQueueOnCast(
+        context: Context,
+        songs: List<SongDto>,
+        startIndex: Int,
+        startPositionMs: Long,
+        autoPlay: Boolean
+    ): Boolean {
+        return try {
+            val castContext = CastContext.getSharedInstance(context)
+            val session = castContext.sessionManager.currentCastSession ?: return false
+            val remoteMediaClient = session.remoteMediaClient ?: return false
+
+            val queueItems = songs.map { song ->
+                val streamUrl = apiClient.getStreamUrl(song.id)
+                val metadata = CastMetadata(CastMetadata.MEDIA_TYPE_MUSIC_TRACK).apply {
+                    putString(CastMetadata.KEY_TITLE, song.title)
+                    putString(CastMetadata.KEY_ARTIST, song.artist ?: "")
+                    putString(CastMetadata.KEY_ALBUM_TITLE, song.album ?: "")
+                    song.coverArt?.let { addImage(WebImage(Uri.parse(it))) }
+                }
+                val mediaInfo = MediaInfo.Builder(streamUrl)
+                    .setStreamType(MediaInfo.STREAM_TYPE_BUFFERED)
+                    .setContentType("audio/mpeg")
+                    .setMetadata(metadata)
+                    .build()
+                MediaQueueItem.Builder(mediaInfo).build()
+            }.toTypedArray()
+
+            remoteMediaClient.queueLoad(
+                queueItems,
+                startIndex,
+                MediaStatus.REPEAT_MODE_REPEAT_OFF,
+                startPositionMs,
+                null
+            )
+            Log.d(TAG, "loadQueueOnCast: loaded ${queueItems.size} items, start=$startIndex")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "loadQueueOnCast failed", e)
+            false
+        }
     }
 
     private fun buildMediaItem(song: SongDto): MediaItem {
