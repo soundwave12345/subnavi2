@@ -85,7 +85,11 @@ fun PlaylistDetailScreen(
             val playlist = state.playlist
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 item {
-                    PlaylistHeader(playlistName = playlist!!.name, songCount = playlist.songCount)
+                    PlaylistHeader(
+                        playlistName = playlist!!.name,
+                        songCount = playlist.songCount,
+                        coverArt = playlist.coverArt
+                    )
                 }
                 item {
                     Row(
@@ -124,12 +128,23 @@ fun PlaylistDetailScreen(
 }
 
 @Composable
-private fun PlaylistHeader(playlistName: String, songCount: Int) {
+private fun PlaylistHeader(playlistName: String, songCount: Int, coverArt: String?) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(8.dp))
+        if (coverArt != null) {
+            AsyncImage(
+                model = coverArt,
+                contentDescription = playlistName,
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(MaterialTheme.shapes.large),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         Text(
             text = playlistName,
             style = MaterialTheme.typography.headlineSmall,
