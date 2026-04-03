@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,6 +57,9 @@ fun PlaylistsScreen(
         TopAppBar(
             title = { Text("Playlists") },
             actions = {
+                IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings")
+                }
                 IconButton(onClick = viewModel::showCreateDialog) {
                     Icon(Icons.Default.Add, contentDescription = "Create playlist")
                 }

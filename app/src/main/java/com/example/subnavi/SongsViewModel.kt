@@ -18,6 +18,8 @@ data class SongsUiState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val canLoadMore: Boolean = true,
     val error: String? = null
 )
 
@@ -36,12 +38,27 @@ class SongsViewModel @Inject constructor(
 
     fun loadSongs() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, canLoadMore = true)
             val result = musicRepository.getRandomSongs()
             _uiState.value = _uiState.value.copy(
                 songs = result.getOrDefault(emptyList()),
                 isLoading = false,
+                canLoadMore = result.getOrDefault(emptyList()).size >= 50,
                 error = result.exceptionOrNull()?.message
+            )
+        }
+    }
+
+    fun loadMore() {
+        if (_uiState.value.isLoadingMore || !_uiState.value.canLoadMore || _uiState.value.searchQuery.isNotBlank()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingMore = true)
+            val result = musicRepository.getRandomSongs()
+            val newSongs = result.getOrDefault(emptyList())
+            _uiState.value = _uiState.value.copy(
+                songs = _uiState.value.songs + newSongs,
+                isLoadingMore = false,
+                canLoadMore = newSongs.size >= 50
             )
         }
     }
