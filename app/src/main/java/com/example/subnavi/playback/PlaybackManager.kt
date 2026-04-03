@@ -157,6 +157,12 @@ class PlaybackManager @Inject constructor(
         castPlayer?.seekToPrevious()
     }
 
+    fun setShuffleMode(enabled: Boolean) {
+        castPlayer?.shuffleModeEnabled = enabled
+    }
+
+    fun getShuffleMode(): Boolean = castPlayer?.shuffleModeEnabled == true
+
     fun release() {
         castPlayer?.release()
         castPlayer = null
