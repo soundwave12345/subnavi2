@@ -21,6 +21,10 @@ class SubnaviMediaItemConverter(
 
     private val fallbackConverter = DefaultMediaItemConverter()
 
+    companion object {
+        private const val KEY_SONG_ID = "subnavi_song_id"
+    }
+
     override fun toMediaQueueItem(mediaItem: MediaItem): MediaQueueItem {
         val streamUrl = mediaItem.localConfiguration?.uri?.toString()
             ?: apiClient.getStreamUrl(mediaItem.mediaId)
@@ -31,6 +35,8 @@ class SubnaviMediaItemConverter(
             putString(CastMetadata.KEY_ARTIST, mm.artist?.toString() ?: "")
             putString(CastMetadata.KEY_ALBUM_TITLE, mm.albumTitle?.toString() ?: "")
             mm.artworkUri?.let { addImage(WebImage(it)) }
+            // Store song ID for round-trip matching on track change
+            putString(KEY_SONG_ID, mediaItem.mediaId)
         }
 
         val mediaInfo = MediaInfo.Builder(streamUrl)
@@ -45,8 +51,10 @@ class SubnaviMediaItemConverter(
     override fun toMediaItem(queueItem: MediaQueueItem): MediaItem {
         val info = queueItem.media ?: return fallbackConverter.toMediaItem(queueItem)
         val meta = info.metadata
+        // Recover song ID from custom metadata (set in toMediaQueueItem)
+        val songId = meta?.getString(KEY_SONG_ID) ?: info.contentId ?: ""
         val builder = MediaItem.Builder()
-            .setMediaId(info.contentId ?: "")
+            .setMediaId(songId)
             .setUri(info.contentId)
 
         if (meta != null) {
