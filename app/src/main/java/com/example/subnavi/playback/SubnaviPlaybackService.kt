@@ -44,6 +44,9 @@ class SubnaviPlaybackService : MediaLibraryService() {
                 player,
                 object : MediaLibrarySession.Callback {}
             ).build()
+
+        // Register the session so Media3 manages its notification automatically
+        addSession(mediaSession!!)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
