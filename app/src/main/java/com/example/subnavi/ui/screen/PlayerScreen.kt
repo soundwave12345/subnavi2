@@ -109,6 +109,24 @@ fun PlayerScreen(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Blurred background from cover art
+        if (song != null && song.coverArt != null) {
+            AsyncImage(
+                model = song.coverArt,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(80.dp),
+                contentScale = ContentScale.Crop
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
+            )
+        }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -159,27 +177,6 @@ fun PlayerScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (song != null) {
-            // Blurred background from cover art
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }
-            ) {
-                AsyncImage(
-                    model = song.coverArt,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(80.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
-                )
-            }
-
             // Cover art with heart and playlist buttons
             Box(
                 modifier = Modifier
@@ -345,6 +342,7 @@ fun PlayerScreen(
             }
         }
     }
+    } // close outer Box
 }
 
 @Composable
