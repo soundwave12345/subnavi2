@@ -105,6 +105,7 @@ dependencies {
 
     // Coroutines
     implementation(libs.coroutines.android)
+    implementation(libs.coroutines.guava)
 
     // Testing
     testImplementation(libs.junit)
