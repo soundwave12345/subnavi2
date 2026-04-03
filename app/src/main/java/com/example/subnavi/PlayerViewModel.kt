@@ -38,6 +38,10 @@ class PlayerViewModel @Inject constructor(
         playbackManager.togglePlayPause()
     }
 
+    fun setShuffleMode(enabled: Boolean) {
+        playbackManager.setShuffleMode(enabled)
+    }
+
     fun skipNext() {
         playbackManager.skipNext()
         val state = playbackState.value

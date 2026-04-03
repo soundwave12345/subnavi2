@@ -65,20 +65,16 @@ class PlaybackManager @Inject constructor(
                     val state = _playbackState.value
                     if (state.queue.isEmpty()) return
 
-                    // Preserve position
                     val pos = oldPlayer.currentPosition
                     val idx = oldPlayer.currentMediaItemIndex
 
-                    // Rebuild media items on new player
-                    val items = state.queue.map { song ->
-                        buildMediaItem(song)
-                    }
+                    val isRemote = newPlayer.deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE
+                    _playbackState.value = state.copy(isCasting = isRemote)
+
+                    val items = state.queue.map { song -> buildMediaItem(song) }
                     newPlayer.setMediaItems(items, idx, pos)
                     newPlayer.prepare()
                     newPlayer.playWhenReady = oldPlayer.playWhenReady
-
-                    val isRemote = newPlayer.deviceInfo.playbackType == DeviceInfo.PLAYBACK_TYPE_REMOTE
-                    _playbackState.value = state.copy(isCasting = isRemote)
                 }
             })
             .build()
@@ -110,11 +106,6 @@ class PlaybackManager @Inject constructor(
 
     fun play(context: Context, songs: List<SongDto>, startIndex: Int = 0) {
         val player = getPlayer(context)
-        val items = songs.map { song -> buildMediaItem(song) }
-        player.clearMediaItems()
-        player.setMediaItems(items, startIndex, 0)
-        player.prepare()
-        player.playWhenReady = true
 
         // Start the media service for notification controls
         val intent = Intent(context, SubnaviPlaybackService::class.java)
@@ -127,6 +118,15 @@ class PlaybackManager @Inject constructor(
             isPlaying = true,
             isCasting = _playbackState.value.isCasting
         )
+
+        // Always set items on CastPlayer — when casting, CastPlayer delegates
+        // to RemoteCastPlayer which uses SubnaviMediaItemConverter to load the
+        // full queue on the Cast device, keeping internal state in sync.
+        val items = songs.map { song -> buildMediaItem(song) }
+        player.clearMediaItems()
+        player.setMediaItems(items, startIndex, 0)
+        player.prepare()
+        player.playWhenReady = true
     }
 
     private fun buildMediaItem(song: SongDto): MediaItem {
@@ -156,6 +156,12 @@ class PlaybackManager @Inject constructor(
     fun skipPrevious() {
         castPlayer?.seekToPrevious()
     }
+
+    fun setShuffleMode(enabled: Boolean) {
+        castPlayer?.shuffleModeEnabled = enabled
+    }
+
+    fun getShuffleMode(): Boolean = castPlayer?.shuffleModeEnabled == true
 
     fun release() {
         castPlayer?.release()

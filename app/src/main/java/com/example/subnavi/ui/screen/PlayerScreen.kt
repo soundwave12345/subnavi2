@@ -82,7 +82,6 @@ import com.example.subnavi.CastViewModel
 import com.example.subnavi.LyricsViewModel
 import com.example.subnavi.PlayerViewModel
 import com.example.subnavi.SubnaviApp
-import com.example.subnavi.cast.CastHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,16 +158,6 @@ fun PlayerScreen(
                             contentDescription = "Lyrics",
                             tint = if (showLyrics) MaterialTheme.colorScheme.primary
                             else Color.White
-                        )
-                    }
-                }
-                // Cast: load song when connected
-                if (castConnected && song != null) {
-                    LaunchedEffect(song.id, castConnected) {
-                        CastHelper.loadSong(
-                            context,
-                            SubnaviApp.instance.playbackManager.apiClient,
-                            song
                         )
                     }
                 }
