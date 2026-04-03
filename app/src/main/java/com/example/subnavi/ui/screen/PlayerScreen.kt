@@ -49,6 +49,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -133,10 +134,10 @@ fun PlayerScreen(
             .padding(horizontal = 24.dp)
     ) {
         TopAppBar(
-            title = { Text("Now Playing") },
+            title = { Text("Now Playing", color = Color.White) },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                 }
             },
             actions = {
@@ -148,7 +149,7 @@ fun PlayerScreen(
                         Icons.Default.Cast,
                         contentDescription = "Cast",
                         tint = if (castConnected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface
+                        else Color.White
                     )
                 }
                 if (song != null) {
@@ -157,7 +158,7 @@ fun PlayerScreen(
                             Icons.Default.Lyrics,
                             contentDescription = "Lyrics",
                             tint = if (showLyrics) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface
+                            else Color.White
                         )
                     }
                 }
@@ -171,7 +172,8 @@ fun PlayerScreen(
                         )
                     }
                 }
-            }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -284,13 +286,14 @@ fun PlayerScreen(
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = listOfNotNull(song.artist, song.album).joinToString(" · "),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.White.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -312,6 +315,7 @@ fun PlayerScreen(
                     Icon(
                         Icons.Default.SkipPrevious,
                         contentDescription = "Previous",
+                        tint = Color.White,
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -320,6 +324,7 @@ fun PlayerScreen(
                     Icon(
                         if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (state.isPlaying) "Pause" else "Play",
+                        tint = Color.White,
                         modifier = Modifier.size(56.dp)
                     )
                 }
@@ -328,6 +333,7 @@ fun PlayerScreen(
                     Icon(
                         Icons.Default.SkipNext,
                         contentDescription = "Next",
+                        tint = Color.White,
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -338,7 +344,7 @@ fun PlayerScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("No track playing", style = MaterialTheme.typography.bodyLarge)
+                Text("No track playing", style = MaterialTheme.typography.bodyLarge, color = Color.White)
             }
         }
     }
@@ -454,7 +460,7 @@ private fun PlayerSeekBar(player: Player) {
         Text(
             text = formatMs(player.currentPosition),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color.White.copy(alpha = 0.7f)
         )
         Slider(
             value = position,
@@ -467,7 +473,7 @@ private fun PlayerSeekBar(player: Player) {
         Text(
             text = formatMs(player.duration.coerceAtLeast(0)),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color.White.copy(alpha = 0.7f)
         )
     }
 }
