@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -51,6 +53,9 @@ class SubnaviPlaybackService : MediaLibraryService() {
 
     private var mediaSession: MediaLibrarySession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // Cache last browsed song list for queue context
+    private var lastBrowsedSongs: List<SongDto> = emptyList()
     private var cachedSearchQuery: String = ""
     private var cachedSearchResults: List<SongDto> = emptyList()
 
@@ -128,8 +133,9 @@ class SubnaviPlaybackService : MediaLibraryService() {
         ): ListenableFuture<List<MediaItem>> {
             Log.d(TAG, "onAddMediaItems: ${mediaItems.size} items, ids=${mediaItems.map { it.mediaId }}")
 
-            // Handle Play All / Shuffle All — expand to full song list
             val firstId = mediaItems.firstOrNull()?.mediaId ?: ""
+
+            // Handle Play All / Shuffle All — expand to full song list
             if (firstId.startsWith(PLAY_ALL_PREFIX) || firstId.startsWith(SHUFFLE_ALL_PREFIX)) {
                 val isShuffle = firstId.startsWith(SHUFFLE_ALL_PREFIX)
                 val parentId = if (isShuffle) {
@@ -141,15 +147,37 @@ class SubnaviPlaybackService : MediaLibraryService() {
 
                 return serviceScope.async(Dispatchers.IO) {
                     val songs = loadSongsForParent(parentId)
-                    Log.d(TAG, "onAddMediaItems expanded: ${songs.size} songs for $parentId")
+                    Log.d(TAG, "Play/Shuffle All: ${songs.size} songs for $parentId")
                     songs.map { buildSongMediaItem(it) }
                 }.asListenableFuture()
             }
 
-            // Regular items — Android Auto sends without URI, resolve from mediaId
+            // Single song from browse — expand to full queue context
+            if (mediaItems.size == 1 && !firstId.startsWith("[")) {
+                val cached = lastBrowsedSongs
+                val index = cached.indexOfFirst { it.id == firstId }
+                if (index >= 0 && cached.size > 1) {
+                    Log.d(TAG, "onAddMediaItems: expanding single song to queue of ${cached.size}, start=$index")
+                    val items = cached.map { buildSongMediaItem(it) }
+                    // Seek to correct position after items are set
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        try {
+                            val p = session.player
+                            if (p.mediaItemCount == items.size) {
+                                p.seekTo(index, 0)
+                                Log.d(TAG, "onAddMediaItems: seeked to index $index")
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "onAddMediaItems: seek failed", e)
+                        }
+                    }, 300)
+                    return Futures.immediateFuture(items)
+                }
+            }
+
+            // Fallback — resolve URI from mediaId
             val resolvedItems = mediaItems.map { item ->
                 if (item.localConfiguration != null) {
-                    Log.d(TAG, "onAddMediaItems: item ${item.mediaId} already has URI")
                     item
                 } else {
                     Log.d(TAG, "onAddMediaItems: resolving URI for ${item.mediaId}")
@@ -206,9 +234,12 @@ class SubnaviPlaybackService : MediaLibraryService() {
                     } else if (parentId.startsWith(PLAYLIST_PREFIX)) {
                         loadPlaylistSongs(parentId.removePrefix(PLAYLIST_PREFIX), params)
                     } else {
-                        // Search results: return cached results for this query
+                        // Search results
                         val results = if (parentId == cachedSearchQuery) cachedSearchResults else emptyList()
                         Log.d(TAG, "onGetChildren search: query=$parentId results=${results.size}")
+                        if (results.isNotEmpty()) {
+                            lastBrowsedSongs = results
+                        }
                         val items = ImmutableList.copyOf(results.map { buildSongMediaItem(it) })
                         Futures.immediateFuture(LibraryResult.ofItemList(items, params))
                     }
@@ -254,7 +285,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
         }
     }
 
-    // --- Resolve media items without URI (from Android Auto) ---
+    // --- Resolve media items without URI ---
 
     private fun resolveMediaItem(mediaId: String): MediaItem {
         val apiClient = SubnaviApp.instance.playbackManager.apiClient
@@ -314,7 +345,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
         }
     }
 
-    // --- Async data loaders using serviceScope.async ---
+    // --- Async data loaders ---
 
     private fun loadAlbums(
         params: LibraryParams?
@@ -394,6 +425,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
         return serviceScope.async(Dispatchers.IO) {
             val repo = getRepository() ?: return@async errImmutable("No repository")
             val songs = repo.getRandomSongs().getOrNull() ?: return@async errImmutable("Load failed")
+            lastBrowsedSongs = songs
             val items = listOf(
                 buildPlayAllItem(RANDOM_SONGS_ID),
                 buildShuffleAllItem(RANDOM_SONGS_ID)
@@ -409,6 +441,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
         return serviceScope.async(Dispatchers.IO) {
             val repo = getRepository() ?: return@async errImmutable("No repository")
             val album = repo.getAlbumDetail(albumId).getOrNull() ?: return@async errImmutable("Album not found")
+            lastBrowsedSongs = album.song
             val parentId = "$ALBUM_PREFIX$albumId"
             val items = listOf(
                 buildPlayAllItem(parentId),
@@ -426,6 +459,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
             val repo = getRepository() ?: return@async errImmutable("No repository")
             val playlist = repo.getPlaylistDetail(playlistId).getOrNull()
                 ?: return@async errImmutable("Playlist not found")
+            lastBrowsedSongs = playlist.entry
             val parentId = "$PLAYLIST_PREFIX$playlistId"
             val items = listOf(
                 buildPlayAllItem(parentId),
