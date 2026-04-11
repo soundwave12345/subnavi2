@@ -45,6 +45,8 @@ class SubnaviPlaybackService : MediaLibraryService() {
         private const val RANDOM_SONGS_ID = "[random]"
         private const val ALBUM_PREFIX = "[album]"
         private const val PLAYLIST_PREFIX = "[playlist]"
+        private const val PLAY_ALL_PREFIX = "[play_all]"
+        private const val SHUFFLE_ALL_PREFIX = "[shuffle_all]"
     }
 
     private var mediaSession: MediaLibrarySession? = null
@@ -123,7 +125,23 @@ class SubnaviPlaybackService : MediaLibraryService() {
             controller: ControllerInfo,
             mediaItems: MutableList<MediaItem>
         ): ListenableFuture<List<MediaItem>> {
-            // Android Auto sends items without URI — resolve from mediaId
+            // Handle Play All / Shuffle All — expand to full song list
+            val firstId = mediaItems.firstOrNull()?.mediaId ?: ""
+            if (firstId.startsWith(PLAY_ALL_PREFIX) || firstId.startsWith(SHUFFLE_ALL_PREFIX)) {
+                val isShuffle = firstId.startsWith(SHUFFLE_ALL_PREFIX)
+                val parentId = if (isShuffle) {
+                    firstId.removePrefix(SHUFFLE_ALL_PREFIX)
+                } else {
+                    firstId.removePrefix(PLAY_ALL_PREFIX)
+                }
+                if (isShuffle) session.player.shuffleModeEnabled = true
+
+                return serviceScope.async(Dispatchers.IO) {
+                    loadSongsForParent(parentId).map { buildSongMediaItem(it) }
+                }.asListenableFuture()
+            }
+
+            // Regular items — Android Auto sends without URI, resolve from mediaId
             val resolvedItems = mediaItems.map { item ->
                 if (item.localConfiguration != null) {
                     item
@@ -231,6 +249,50 @@ class SubnaviPlaybackService : MediaLibraryService() {
             .build()
     }
 
+    private fun buildPlayAllItem(parentId: String): MediaItem {
+        return MediaItem.Builder()
+            .setMediaId("$PLAY_ALL_PREFIX$parentId")
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle("Play All")
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
+                    .build()
+            )
+            .build()
+    }
+
+    private fun buildShuffleAllItem(parentId: String): MediaItem {
+        return MediaItem.Builder()
+            .setMediaId("$SHUFFLE_ALL_PREFIX$parentId")
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle("Shuffle All")
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
+                    .build()
+            )
+            .build()
+    }
+
+    private suspend fun loadSongsForParent(parentId: String): List<SongDto> {
+        val repo = getRepository() ?: return emptyList()
+        return when {
+            parentId.startsWith(ALBUM_PREFIX) -> {
+                repo.getAlbumDetail(parentId.removePrefix(ALBUM_PREFIX))
+                    .getOrNull()?.song ?: emptyList()
+            }
+            parentId.startsWith(PLAYLIST_PREFIX) -> {
+                repo.getPlaylistDetail(parentId.removePrefix(PLAYLIST_PREFIX))
+                    .getOrNull()?.entry ?: emptyList()
+            }
+            parentId == RANDOM_SONGS_ID -> {
+                repo.getRandomSongs().getOrNull() ?: emptyList()
+            }
+            else -> emptyList()
+        }
+    }
+
     // --- Async data loaders using serviceScope.async ---
 
     private fun loadAlbums(
@@ -311,7 +373,11 @@ class SubnaviPlaybackService : MediaLibraryService() {
         return serviceScope.async(Dispatchers.IO) {
             val repo = getRepository() ?: return@async errImmutable("No repository")
             val songs = repo.getRandomSongs().getOrNull() ?: return@async errImmutable("Load failed")
-            LibraryResult.ofItemList(ImmutableList.copyOf(songs.map { buildSongMediaItem(it) }), params)
+            val items = listOf(
+                buildPlayAllItem(RANDOM_SONGS_ID),
+                buildShuffleAllItem(RANDOM_SONGS_ID)
+            ) + songs.map { buildSongMediaItem(it) }
+            LibraryResult.ofItemList(ImmutableList.copyOf(items), params)
         }.asListenableFuture()
     }
 
@@ -322,7 +388,12 @@ class SubnaviPlaybackService : MediaLibraryService() {
         return serviceScope.async(Dispatchers.IO) {
             val repo = getRepository() ?: return@async errImmutable("No repository")
             val album = repo.getAlbumDetail(albumId).getOrNull() ?: return@async errImmutable("Album not found")
-            LibraryResult.ofItemList(ImmutableList.copyOf(album.song.map { buildSongMediaItem(it) }), params)
+            val parentId = "$ALBUM_PREFIX$albumId"
+            val items = listOf(
+                buildPlayAllItem(parentId),
+                buildShuffleAllItem(parentId)
+            ) + album.song.map { buildSongMediaItem(it) }
+            LibraryResult.ofItemList(ImmutableList.copyOf(items), params)
         }.asListenableFuture()
     }
 
@@ -334,7 +405,12 @@ class SubnaviPlaybackService : MediaLibraryService() {
             val repo = getRepository() ?: return@async errImmutable("No repository")
             val playlist = repo.getPlaylistDetail(playlistId).getOrNull()
                 ?: return@async errImmutable("Playlist not found")
-            LibraryResult.ofItemList(ImmutableList.copyOf(playlist.entry.map { buildSongMediaItem(it) }), params)
+            val parentId = "$PLAYLIST_PREFIX$playlistId"
+            val items = listOf(
+                buildPlayAllItem(parentId),
+                buildShuffleAllItem(parentId)
+            ) + playlist.entry.map { buildSongMediaItem(it) }
+            LibraryResult.ofItemList(ImmutableList.copyOf(items), params)
         }.asListenableFuture()
     }
 
