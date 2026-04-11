@@ -118,6 +118,22 @@ class SubnaviPlaybackService : MediaLibraryService() {
 
     private inner class SubnaviLibraryCallback : MediaLibrarySession.Callback {
 
+        override fun onAddMediaItems(
+            session: MediaSession,
+            controller: ControllerInfo,
+            mediaItems: MutableList<MediaItem>
+        ): ListenableFuture<List<MediaItem>> {
+            // Android Auto sends items without URI — resolve from mediaId
+            val resolvedItems = mediaItems.map { item ->
+                if (item.localConfiguration != null) {
+                    item
+                } else {
+                    resolveMediaItem(item.mediaId)
+                }
+            }
+            return Futures.immediateFuture(resolvedItems)
+        }
+
         override fun onGetLibraryRoot(
             session: MediaLibraryService.MediaLibrarySession,
             browser: ControllerInfo,
@@ -197,6 +213,22 @@ class SubnaviPlaybackService : MediaLibraryService() {
             }
             return Futures.immediateFuture(LibraryResult.ofVoid())
         }
+    }
+
+    // --- Resolve media items without URI (from Android Auto) ---
+
+    private fun resolveMediaItem(mediaId: String): MediaItem {
+        val apiClient = SubnaviApp.instance.playbackManager.apiClient
+        return MediaItem.Builder()
+            .setMediaId(mediaId)
+            .setUri(apiClient.getStreamUrl(mediaId))
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setIsPlayable(true)
+                    .setIsBrowsable(false)
+                    .build()
+            )
+            .build()
     }
 
     // --- Async data loaders using serviceScope.async ---
