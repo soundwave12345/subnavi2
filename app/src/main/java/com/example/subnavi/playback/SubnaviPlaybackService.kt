@@ -51,6 +51,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
 
     private var mediaSession: MediaLibrarySession? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var cachedSearchQuery: String = ""
     private var cachedSearchResults: List<SongDto> = emptyList()
 
     override fun onCreate() {
@@ -125,6 +126,8 @@ class SubnaviPlaybackService : MediaLibraryService() {
             controller: ControllerInfo,
             mediaItems: MutableList<MediaItem>
         ): ListenableFuture<List<MediaItem>> {
+            Log.d(TAG, "onAddMediaItems: ${mediaItems.size} items, ids=${mediaItems.map { it.mediaId }}")
+
             // Handle Play All / Shuffle All — expand to full song list
             val firstId = mediaItems.firstOrNull()?.mediaId ?: ""
             if (firstId.startsWith(PLAY_ALL_PREFIX) || firstId.startsWith(SHUFFLE_ALL_PREFIX)) {
@@ -137,15 +140,19 @@ class SubnaviPlaybackService : MediaLibraryService() {
                 if (isShuffle) session.player.shuffleModeEnabled = true
 
                 return serviceScope.async(Dispatchers.IO) {
-                    loadSongsForParent(parentId).map { buildSongMediaItem(it) }
+                    val songs = loadSongsForParent(parentId)
+                    Log.d(TAG, "onAddMediaItems expanded: ${songs.size} songs for $parentId")
+                    songs.map { buildSongMediaItem(it) }
                 }.asListenableFuture()
             }
 
             // Regular items — Android Auto sends without URI, resolve from mediaId
             val resolvedItems = mediaItems.map { item ->
                 if (item.localConfiguration != null) {
+                    Log.d(TAG, "onAddMediaItems: item ${item.mediaId} already has URI")
                     item
                 } else {
+                    Log.d(TAG, "onAddMediaItems: resolving URI for ${item.mediaId}")
                     resolveMediaItem(item.mediaId)
                 }
             }
@@ -178,6 +185,7 @@ class SubnaviPlaybackService : MediaLibraryService() {
             pageSize: Int,
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            Log.d(TAG, "onGetChildren: parentId=$parentId page=$page pageSize=$pageSize")
             return when (parentId) {
                 ROOT_ID -> {
                     val items = ImmutableList.of(
@@ -198,10 +206,10 @@ class SubnaviPlaybackService : MediaLibraryService() {
                     } else if (parentId.startsWith(PLAYLIST_PREFIX)) {
                         loadPlaylistSongs(parentId.removePrefix(PLAYLIST_PREFIX), params)
                     } else {
-                        // Search results: return cached search results
-                        val items = ImmutableList.copyOf(
-                            cachedSearchResults.map { buildSongMediaItem(it) }
-                        )
+                        // Search results: return cached results for this query
+                        val results = if (parentId == cachedSearchQuery) cachedSearchResults else emptyList()
+                        Log.d(TAG, "onGetChildren search: query=$parentId results=${results.size}")
+                        val items = ImmutableList.copyOf(results.map { buildSongMediaItem(it) })
                         Futures.immediateFuture(LibraryResult.ofItemList(items, params))
                     }
                 }
@@ -222,12 +230,25 @@ class SubnaviPlaybackService : MediaLibraryService() {
             query: String,
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<Void>> {
+            Log.d(TAG, "onSearch: query=$query")
             serviceScope.launch {
-                val repo = getRepository()
-                if (repo != null) {
-                    cachedSearchResults = repo.searchSongs(query).getOrNull() ?: emptyList()
-                    session.notifySearchResultChanged(browser, query, cachedSearchResults.size, params)
+                try {
+                    val repo = getRepository()
+                    if (repo != null) {
+                        cachedSearchResults = repo.searchSongs(query).getOrDefault(emptyList())
+                        cachedSearchQuery = query
+                        Log.d(TAG, "onSearch results: ${cachedSearchResults.size} songs for '$query'")
+                    } else {
+                        Log.e(TAG, "onSearch: repository is null")
+                        cachedSearchResults = emptyList()
+                        cachedSearchQuery = query
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "onSearch failed for '$query'", e)
+                    cachedSearchResults = emptyList()
+                    cachedSearchQuery = query
                 }
+                session.notifySearchResultChanged(browser, query, cachedSearchResults.size, params)
             }
             return Futures.immediateFuture(LibraryResult.ofVoid())
         }
