@@ -287,27 +287,29 @@ class SubnaviPlaybackService : MediaLibraryService() {
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<Void>> {
             Log.d(TAG, "onSearch: query=$query")
-            // Return Future that completes AFTER search is done and notification sent.
-            // If we return immediateFuture, Android Auto processes the result before
-            // notifySearchResultChanged is called, and never requests the children.
-            return serviceScope.async(Dispatchers.IO) {
+            cachedSearchQuery = query
+            serviceScope.launch(Dispatchers.IO) {
                 try {
                     val repo = getRepository()
-                    cachedSearchQuery = query
-                    if (repo != null) {
-                        cachedSearchResults = repo.searchSongs(query).getOrDefault(emptyList())
-                        Log.d(TAG, "onSearch results: ${cachedSearchResults.size} songs for '$query'")
+                    cachedSearchResults = if (repo != null) {
+                        repo.searchSongs(query).getOrDefault(emptyList())
                     } else {
-                        Log.e(TAG, "onSearch: repository is null")
-                        cachedSearchResults = emptyList()
+                        emptyList()
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "onSearch failed for '$query'", e)
                     cachedSearchResults = emptyList()
                 }
-                session.notifySearchResultChanged(browser, query, cachedSearchResults.size, params)
-                LibraryResult.ofVoid()
-            }.asListenableFuture()
+                Log.d(TAG, "onSearch results: ${cachedSearchResults.size} songs for '$query'")
+                // Must notify on main thread — Android Auto ignores notifications
+                // from background threads
+                Handler(Looper.getMainLooper()).post {
+                    session.notifySearchResultChanged(
+                        browser, query, cachedSearchResults.size, params
+                    )
+                }
+            }
+            return Futures.immediateFuture(LibraryResult.ofVoid())
         }
     }
 
