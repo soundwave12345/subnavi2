@@ -152,6 +152,31 @@ class SubnaviPlaybackService : MediaLibraryService() {
                 }.asListenableFuture()
             }
 
+            // Voice search: Android Auto sends playFromSearch() which arrives here
+            // with the search query as mediaId (not a Subsonic song ID).
+            // Detect non-numeric IDs and search for them.
+            if (mediaItems.size == 1 && !firstId.startsWith("[") && !isSubsonicId(firstId)) {
+                val query = firstId.ifBlank {
+                    mediaItems.first().mediaMetadata.title?.toString() ?: ""
+                }
+                if (query.isNotBlank()) {
+                    Log.d(TAG, "onAddMediaItems: voice search for '$query'")
+                    return serviceScope.async(Dispatchers.IO) {
+                        val repo = getRepository()
+                        if (repo != null) {
+                            val results = repo.searchSongs(query).getOrDefault(emptyList())
+                            Log.d(TAG, "Voice search results: ${results.size} songs for '$query'")
+                            if (results.isNotEmpty()) {
+                                lastBrowsedSongs = results
+                                return@async results.map { buildSongMediaItem(it) }
+                            }
+                        }
+                        // Fallback: try resolving as a song ID
+                        listOf(resolveMediaItem(firstId))
+                    }.asListenableFuture()
+                }
+            }
+
             // Single song from browse — expand to full queue context
             if (mediaItems.size == 1 && !firstId.startsWith("[")) {
                 val cached = lastBrowsedSongs
@@ -513,6 +538,11 @@ class SubnaviPlaybackService : MediaLibraryService() {
                     .build()
             )
             .build()
+    }
+
+    /** Subsonic IDs are numeric (e.g., "1234"). Voice queries like "Queen" are not. */
+    private fun isSubsonicId(id: String): Boolean {
+        return id.isNotEmpty() && id.all { it.isDigit() }
     }
 
     private fun getRepository() = try {
