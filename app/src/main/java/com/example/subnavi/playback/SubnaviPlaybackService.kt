@@ -287,26 +287,27 @@ class SubnaviPlaybackService : MediaLibraryService() {
             params: LibraryParams?
         ): ListenableFuture<LibraryResult<Void>> {
             Log.d(TAG, "onSearch: query=$query")
-            serviceScope.launch {
+            // Return Future that completes AFTER search is done and notification sent.
+            // If we return immediateFuture, Android Auto processes the result before
+            // notifySearchResultChanged is called, and never requests the children.
+            return serviceScope.async(Dispatchers.IO) {
                 try {
                     val repo = getRepository()
+                    cachedSearchQuery = query
                     if (repo != null) {
                         cachedSearchResults = repo.searchSongs(query).getOrDefault(emptyList())
-                        cachedSearchQuery = query
                         Log.d(TAG, "onSearch results: ${cachedSearchResults.size} songs for '$query'")
                     } else {
                         Log.e(TAG, "onSearch: repository is null")
                         cachedSearchResults = emptyList()
-                        cachedSearchQuery = query
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "onSearch failed for '$query'", e)
                     cachedSearchResults = emptyList()
-                    cachedSearchQuery = query
                 }
                 session.notifySearchResultChanged(browser, query, cachedSearchResults.size, params)
-            }
-            return Futures.immediateFuture(LibraryResult.ofVoid())
+                LibraryResult.ofVoid()
+            }.asListenableFuture()
         }
     }
 
